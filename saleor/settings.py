@@ -11,22 +11,19 @@ from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from django_prices.utils.formatting import get_currency_fraction
 from sentry_sdk.integrations.django import DjangoIntegration
 
+import environ
+env = environ.Env(
+    # set casting, default value
+    DEBUG=(bool, False)
+)
+# reading .env file
+environ.Env.read_env()
+
+# False if not in os.environ
+DEBUG = env('DEBUG', default=False)
 
 def get_list(text):
     return [item.strip() for item in text.split(",")]
-
-
-def get_bool_from_env(name, default_value):
-    if name in os.environ:
-        value = os.environ[name]
-        try:
-            return ast.literal_eval(value)
-        except ValueError as e:
-            raise ValueError("{} is an invalid value for {}".format(value, name)) from e
-    return default_value
-
-
-DEBUG = get_bool_from_env("DEBUG", True)
 
 SITE_ID = 1
 
@@ -42,13 +39,13 @@ ADMINS = (
 MANAGERS = ADMINS
 
 ALLOWED_CLIENT_HOSTS = get_list(
-    os.environ.get("ALLOWED_CLIENT_HOSTS", "localhost,127.0.0.1")
+    env("ALLOWED_CLIENT_HOSTS", default="localhost,127.0.0.1")
 )
 
-INTERNAL_IPS = get_list(os.environ.get("INTERNAL_IPS", "127.0.0.1"))
+INTERNAL_IPS = get_list(env("INTERNAL_IPS", default="127.0.0.1"))
 
 # Some cloud providers (Heroku) export REDIS_URL variable instead of CACHE_URL
-REDIS_URL = os.environ.get("REDIS_URL")
+REDIS_URL = env("REDIS_URL", default=None)
 if REDIS_URL:
     CACHE_URL = os.environ.setdefault("CACHE_URL", REDIS_URL)
 CACHES = {"default": django_cache_url.config()}
@@ -114,9 +111,9 @@ USE_TZ = True
 
 FORM_RENDERER = "django.forms.renderers.TemplatesSetting"
 
-EMAIL_URL = os.environ.get("EMAIL_URL")
-SENDGRID_USERNAME = os.environ.get("SENDGRID_USERNAME")
-SENDGRID_PASSWORD = os.environ.get("SENDGRID_PASSWORD")
+EMAIL_URL = env("EMAIL_URL", default=None)
+SENDGRID_USERNAME = env("SENDGRID_USERNAME", default=None)
+SENDGRID_PASSWORD = env("SENDGRID_PASSWORD", default=None)
 if not EMAIL_URL and SENDGRID_USERNAME and SENDGRID_PASSWORD:
     EMAIL_URL = "smtp://%s:%s@smtp.sendgrid.net:587/?tls=True" % (
         SENDGRID_USERNAME,
@@ -135,18 +132,18 @@ EMAIL_BACKEND = email_config["EMAIL_BACKEND"]
 EMAIL_USE_TLS = email_config["EMAIL_USE_TLS"]
 EMAIL_USE_SSL = email_config["EMAIL_USE_SSL"]
 
-ENABLE_SSL = get_bool_from_env("ENABLE_SSL", False)
+ENABLE_SSL = env("ENABLE_SSL", default=False)
 
 if ENABLE_SSL:
     SECURE_SSL_REDIRECT = not DEBUG
 
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default=EMAIL_HOST_USER)
 
 MEDIA_ROOT = os.path.join(PROJECT_ROOT, "media")
-MEDIA_URL = os.environ.get("MEDIA_URL", "/media/")
+MEDIA_URL = env("MEDIA_URL", default="/media/")
 
 STATIC_ROOT = os.path.join(PROJECT_ROOT, "static")
-STATIC_URL = os.environ.get("STATIC_URL", "/static/")
+STATIC_URL = env("STATIC_URL", default="/static/")
 STATICFILES_DIRS = [
     ("assets", os.path.join(PROJECT_ROOT, "saleor", "static", "assets")),
     ("favicons", os.path.join(PROJECT_ROOT, "saleor", "static", "favicons")),
@@ -200,7 +197,7 @@ TEMPLATES = [
 ]
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_KEY = env('SECRET_KEY')
 
 MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -276,7 +273,7 @@ INSTALLED_APPS = [
 ]
 
 
-ENABLE_DEBUG_TOOLBAR = get_bool_from_env("ENABLE_DEBUG_TOOLBAR", False)
+ENABLE_DEBUG_TOOLBAR = env("ENABLE_DEBUG_TOOLBAR", default=False)
 if ENABLE_DEBUG_TOOLBAR:
     # Ensure the debug toolbar is actually installed before adding it
     try:
@@ -302,7 +299,7 @@ if ENABLE_DEBUG_TOOLBAR:
     ]
     DEBUG_TOOLBAR_CONFIG = {"RESULTS_CACHE_SIZE": 100}
 
-ENABLE_SILK = get_bool_from_env("ENABLE_SILK", False)
+ENABLE_SILK = env("ENABLE_SILK", default=False)
 if ENABLE_SILK:
     MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
     INSTALLED_APPS.append("silk")
@@ -354,8 +351,8 @@ AUTH_PASSWORD_VALIDATORS = [
     }
 ]
 
-DEFAULT_COUNTRY = os.environ.get("DEFAULT_COUNTRY", "US")
-DEFAULT_CURRENCY = os.environ.get("DEFAULT_CURRENCY", "USD")
+DEFAULT_COUNTRY = env("DEFAULT_COUNTRY", default="US")
+DEFAULT_CURRENCY = env("DEFAULT_CURRENCY", default="USD")
 DEFAULT_DECIMAL_PLACES = get_currency_fraction(DEFAULT_CURRENCY)
 DEFAULT_MAX_DIGITS = 12
 DEFAULT_CURRENCY_CODE_LENGTH = 3
@@ -374,26 +371,26 @@ COUNTRIES_OVERRIDE = {
     )
 }
 
-OPENEXCHANGERATES_API_KEY = os.environ.get("OPENEXCHANGERATES_API_KEY")
+OPENEXCHANGERATES_API_KEY = env("OPENEXCHANGERATES_API_KEY", default="")
 
 # VAT configuration
 # Enabling vat requires valid vatlayer access key.
 # If you are subscribed to a paid vatlayer plan, you can enable HTTPS.
-VATLAYER_ACCESS_KEY = os.environ.get("VATLAYER_ACCESS_KEY")
-VATLAYER_USE_HTTPS = get_bool_from_env("VATLAYER_USE_HTTPS", False)
+VATLAYER_ACCESS_KEY = env("VATLAYER_ACCESS_KEY", default="")
+VATLAYER_USE_HTTPS = env("VATLAYER_USE_HTTPS", default=False)
 
 # Avatax supports two ways of log in - username:password or account:license
-AVATAX_USERNAME_OR_ACCOUNT = os.environ.get("AVATAX_USERNAME_OR_ACCOUNT")
-AVATAX_PASSWORD_OR_LICENSE = os.environ.get("AVATAX_PASSWORD_OR_LICENSE")
-AVATAX_USE_SANDBOX = get_bool_from_env("AVATAX_USE_SANDBOX", DEBUG)
-AVATAX_COMPANY_NAME = os.environ.get("AVATAX_COMPANY_NAME", "DEFAULT")
-AVATAX_AUTOCOMMIT = get_bool_from_env("AVATAX_AUTOCOMMIT", False)
+AVATAX_USERNAME_OR_ACCOUNT = env("AVATAX_USERNAME_OR_ACCOUNT", default="")
+AVATAX_PASSWORD_OR_LICENSE = env("AVATAX_PASSWORD_OR_LICENSE", default="")
+AVATAX_USE_SANDBOX = env("AVATAX_USE_SANDBOX", default=DEBUG)
+AVATAX_COMPANY_NAME = env("AVATAX_COMPANY_NAME", default="DEFAULT")
+AVATAX_AUTOCOMMIT = env("AVATAX_AUTOCOMMIT", default=False)
 
 ACCOUNT_ACTIVATION_DAYS = 3
 
 LOGIN_REDIRECT_URL = "home"
 
-GOOGLE_ANALYTICS_TRACKING_ID = os.environ.get("GOOGLE_ANALYTICS_TRACKING_ID")
+GOOGLE_ANALYTICS_TRACKING_ID = env("GOOGLE_ANALYTICS_TRACKING_ID", default="")
 
 
 def get_host():
@@ -416,7 +413,7 @@ if not CACHES["default"]["BACKEND"].endswith("LocMemCache"):
 MESSAGE_TAGS = {messages.ERROR: "danger"}
 
 LOW_STOCK_THRESHOLD = 10
-MAX_CHECKOUT_LINE_QUANTITY = int(os.environ.get("MAX_CHECKOUT_LINE_QUANTITY", 50))
+MAX_CHECKOUT_LINE_QUANTITY = int(env("MAX_CHECKOUT_LINE_QUANTITY", default=50))
 
 PAGINATE_BY = 16
 DASHBOARD_PAGINATE_BY = 30
@@ -431,33 +428,33 @@ bootstrap4 = {
 
 TEST_RUNNER = "tests.runner.PytestTestRunner"
 
-ALLOWED_HOSTS = get_list(os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1"))
-ALLOWED_GRAPHQL_ORIGINS = os.environ.get("ALLOWED_GRAPHQL_ORIGINS", "*")
+ALLOWED_HOSTS = get_list(env("ALLOWED_HOSTS", default="localhost,127.0.0.1"))
+ALLOWED_GRAPHQL_ORIGINS = env("ALLOWED_GRAPHQL_ORIGINS", default="*")
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Amazon S3 configuration
-AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
-AWS_LOCATION = os.environ.get("AWS_LOCATION", "")
-AWS_MEDIA_BUCKET_NAME = os.environ.get("AWS_MEDIA_BUCKET_NAME")
-AWS_MEDIA_CUSTOM_DOMAIN = os.environ.get("AWS_MEDIA_CUSTOM_DOMAIN")
-AWS_QUERYSTRING_AUTH = get_bool_from_env("AWS_QUERYSTRING_AUTH", False)
-AWS_S3_CUSTOM_DOMAIN = os.environ.get("AWS_STATIC_CUSTOM_DOMAIN")
-AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", None)
-AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
-AWS_DEFAULT_ACL = os.environ.get("AWS_DEFAULT_ACL", None)
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="")
+AWS_LOCATION = env("AWS_LOCATION", default="")
+AWS_MEDIA_BUCKET_NAME = env("AWS_MEDIA_BUCKET_NAME", default="")
+AWS_MEDIA_CUSTOM_DOMAIN = env("AWS_MEDIA_CUSTOM_DOMAIN", default="")
+AWS_QUERYSTRING_AUTH = env("AWS_QUERYSTRING_AUTH", default=False)
+AWS_S3_CUSTOM_DOMAIN = env("AWS_STATIC_CUSTOM_DOMAIN", default="")
+AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", default=None)
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="")
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="")
+AWS_DEFAULT_ACL = env("AWS_DEFAULT_ACL", default=None)
 
 # Google Cloud Storage configuration
-GS_PROJECT_ID = os.environ.get("GS_PROJECT_ID")
-GS_STORAGE_BUCKET_NAME = os.environ.get("GS_STORAGE_BUCKET_NAME")
-GS_MEDIA_BUCKET_NAME = os.environ.get("GS_MEDIA_BUCKET_NAME")
-GS_AUTO_CREATE_BUCKET = get_bool_from_env("GS_AUTO_CREATE_BUCKET", False)
+GS_PROJECT_ID = env("GS_PROJECT_ID", default="")
+GS_STORAGE_BUCKET_NAME = env("GS_STORAGE_BUCKET_NAME", default="")
+GS_MEDIA_BUCKET_NAME = env("GS_MEDIA_BUCKET_NAME", default="")
+GS_AUTO_CREATE_BUCKET = env("GS_AUTO_CREATE_BUCKET", default=False)
 
 # If GOOGLE_APPLICATION_CREDENTIALS is set there is no need to load OAuth token
 # See https://django-storages.readthedocs.io/en/latest/backends/gcloud.html
 if "GOOGLE_APPLICATION_CREDENTIALS" not in os.environ:
-    GS_CREDENTIALS = os.environ.get("GS_CREDENTIALS")
+    GS_CREDENTIALS = env("GS_CREDENTIALS", default="")
 
 if AWS_STORAGE_BUCKET_NAME:
     STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
@@ -488,7 +485,7 @@ VERSATILEIMAGEFIELD_RENDITION_KEY_SETS = {
 
 VERSATILEIMAGEFIELD_SETTINGS = {
     # Images should be pre-generated on Production environment
-    "create_images_on_demand": get_bool_from_env("CREATE_IMAGES_ON_DEMAND", DEBUG)
+    "create_images_on_demand": env("CREATE_IMAGES_ON_DEMAND", default=DEBUG)
 }
 
 PLACEHOLDER_IMAGES = {
@@ -519,9 +516,9 @@ DB_SEARCH_ENABLED = True
 
 # support deployment-dependant elastic environment variable
 ES_URL = (
-    os.environ.get("ELASTICSEARCH_URL")
-    or os.environ.get("SEARCHBOX_URL")
-    or os.environ.get("BONSAI_URL")
+    env("ELASTICSEARCH_URL", default="")
+    or env("SEARCHBOX_URL", default="")
+    or env("BONSAI_URL", default="")
 )
 
 ENABLE_SEARCH = bool(ES_URL) or DB_SEARCH_ENABLED  # global search disabling
@@ -561,13 +558,13 @@ SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
 # CELERY SETTINGS
 CELERY_BROKER_URL = (
-    os.environ.get("CELERY_BROKER_URL", os.environ.get("CLOUDAMQP_URL")) or ""
+    env("CELERY_BROKER_URL", default=env("CLOUDAMQP_URL", default="")) or ""
 )
 CELERY_TASK_ALWAYS_EAGER = not CELERY_BROKER_URL
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", None)
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default=None)
 
 # Impersonate module settings
 IMPERSONATE = {
@@ -608,12 +605,12 @@ DEFAULT_MENUS = {"top_menu_name": "navbar", "bottom_menu_name": "footer"}
 NOCAPTCHA = True
 
 # Set Google's reCaptcha keys
-RECAPTCHA_PUBLIC_KEY = os.environ.get("RECAPTCHA_PUBLIC_KEY")
-RECAPTCHA_PRIVATE_KEY = os.environ.get("RECAPTCHA_PRIVATE_KEY")
+RECAPTCHA_PUBLIC_KEY = env("RECAPTCHA_PUBLIC_KEY", default="")
+RECAPTCHA_PRIVATE_KEY = env("RECAPTCHA_PRIVATE_KEY", default="")
 
 
 #  Sentry
-SENTRY_DSN = os.environ.get("SENTRY_DSN")
+SENTRY_DSN = env("SENTRY_DSN", default="")
 if SENTRY_DSN:
     sentry_sdk.init(dsn=SENTRY_DSN, integrations=[DjangoIntegration()])
 
@@ -637,4 +634,4 @@ PLUGINS = [
 # Whether DraftJS should be used be used instead of HTML
 # True to use DraftJS (JSON based), for the 2.0 dashboard
 # False to use the old editor from dashboard 1.0
-USE_JSON_CONTENT = get_bool_from_env("USE_JSON_CONTENT", False)
+USE_JSON_CONTENT = env("USE_JSON_CONTENT", default=False)
