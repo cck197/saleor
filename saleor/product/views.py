@@ -128,7 +128,6 @@ def product_details(request, slug, product_id, form=None):
 
 def digital_product(request, token: str) -> Union[FileResponse, HttpResponseNotFound]:
     """Return the direct download link to content if given token is still valid."""
-
     qs = DigitalContentUrl.objects.prefetch_related("line__order__user")
     content_url = get_object_or_404(qs, token=token)  # type: DigitalContentUrl
     if not digital_content_url_is_valid(content_url):
@@ -150,6 +149,10 @@ def digital_product(request, token: str) -> Union[FileResponse, HttpResponseNotF
     increment_download_count(content_url)
     return response
 
+
+def funnel_add_to_checkout(request, funnel_slug, slug, product_id):
+    print(f'funnel_add_to_checkout: {funnel_slug}')
+    return product_add_to_checkout(request, slug, product_id)
 
 def product_add_to_checkout(request, slug, product_id):
     # types: (int, str, dict) -> None
@@ -230,3 +233,67 @@ def collection_index(request, slug, pk):
     ctx = get_product_list_context(request, product_filter)
     ctx.update({"object": collection})
     return TemplateResponse(request, "collection/index.html", ctx)
+
+from .models import Attribute
+
+def funnel_index(request, slug, pk, aslug):
+    collections = collections_visible_to_user(request.user).prefetch_related(
+        "translations"
+    )
+    collection = get_object_or_404(collections, id=pk)
+    if collection.slug != slug:
+        return HttpResponsePermanentRedirect(collection.get_absolute_url())
+    product = (
+        products_for_products_list(user=request.user)
+        .filter(collections__id=collection.id)
+        .sort_by_attribute(Attribute.objects.get(slug=aslug))
+    ).first()
+    today = datetime.date.today()
+    is_visible = product.publication_date is None or product.publication_date <= today
+    checkout = get_checkout_from_request(request)
+    form = ProductForm(
+        checkout=checkout,
+        product=product,
+        data=request.POST or None,
+        discounts=request.discounts,
+        country=request.country,
+        extensions=request.extensions,
+    )
+    availability = get_product_availability(
+        product,
+        discounts=request.discounts,
+        country=request.country,
+        local_currency=request.currency,
+        extensions=request.extensions,
+    )
+    product_images = get_product_images(product)
+    variant_picker_data = get_variant_picker_data(
+        product,
+        request.discounts,
+        request.extensions,
+        request.currency,
+        request.country,
+    )
+    # show_variant_picker determines if variant picker is used or select input
+    show_variant_picker = all(
+        [v["attributes"] for v in variant_picker_data["variants"]]
+    )
+    json_ld_data = product_json_ld(product)
+    ctx = {
+        "description_json": product.translated.description_json,
+        "description_html": product.translated.description,
+        "is_visible": is_visible,
+        'funnel_slug': collection.slug,
+        "form": form,
+        "availability": availability,
+        "product": product,
+        "product_images": product_images,
+        "show_variant_picker": show_variant_picker,
+        "variant_picker_data": json.dumps(
+            variant_picker_data, default=serialize_decimal, cls=SafeJSONEncoder
+        ),
+        "json_ld_product_data": json.dumps(
+            json_ld_data, default=serialize_decimal, cls=SafeJSONEncoder
+        ),
+    }
+    return TemplateResponse(request, "funnel/index.html", ctx)

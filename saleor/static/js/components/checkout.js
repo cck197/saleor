@@ -10,27 +10,31 @@ export const onAddToCheckoutError = response => {
   $addToCheckoutError.html(getAjaxError(response));
 };
 
-export const onAddToCheckoutSuccess = () => {
-  $.get(summaryLink, data => {
-    $checkoutDropdown.html(data);
-    $addToCheckoutError.html("");
-    var newQunatity = $(".checkout-preview-dropdown__total").data("quantity");
-    $(".badge")
-      .html(newQunatity)
-      .removeClass("empty");
-    $checkoutDropdown.addClass("show");
-    $checkoutIcon.addClass("hover");
-    $checkoutDropdown
-      .find(".checkout-preview-dropdown__list")
-      .scrollTop(
-        $checkoutDropdown.find(".checkout-preview-dropdown__list")[0]
-          .scrollHeight
-      );
-    setTimeout(e => {
-      $checkoutDropdown.removeClass("show");
-      $checkoutIcon.removeClass("hover");
-    }, 2500);
-  });
+export const onAddToCheckoutSuccess = response => {
+  if (response.next) {
+    window.location.href = response.next;
+  } else {
+    $.get(summaryLink, data => {
+      $checkoutDropdown.html(data);
+      $addToCheckoutError.html("");
+      var newQunatity = $(".checkout-preview-dropdown__total").data("quantity");
+      $(".badge")
+        .html(newQunatity)
+        .removeClass("empty");
+      $checkoutDropdown.addClass("show");
+      $checkoutIcon.addClass("hover");
+      $checkoutDropdown
+        .find(".checkout-preview-dropdown__list")
+        .scrollTop(
+          $checkoutDropdown.find(".checkout-preview-dropdown__list")[0]
+            .scrollHeight
+        );
+      setTimeout(e => {
+        $checkoutDropdown.removeClass("show");
+        $checkoutIcon.removeClass("hover");
+      }, 2500);
+    });
+  }
 };
 
 export default $(document).ready(e => {

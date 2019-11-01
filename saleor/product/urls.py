@@ -19,6 +19,11 @@ urlpatterns = [
         name="category",
     ),
     url(
+        r"(?P<funnel_slug>[a-z0-9-_]+?)/(?P<slug>[a-z0-9-_]+?)-(?P<product_id>[0-9]+)/add/$",
+        views.funnel_add_to_checkout,
+        name="funnel-add-to-checkout",
+    ),
+    url(
         r"(?P<slug>[a-z0-9-_]+?)-(?P<product_id>[0-9]+)/add/$",
         views.product_add_to_checkout,
         name="add-to-checkout",
@@ -27,5 +32,11 @@ urlpatterns = [
         r"^collection/(?P<slug>[a-z0-9-_/]+?)-(?P<pk>[0-9]+)/$",
         views.collection_index,
         name="collection",
+    ),
+    url(
+        r"^funnel/(?P<slug>[a-z0-9-_/]+?)-(?P<pk>[0-9]+)/$",
+        views.funnel_index,
+        name="funnel",
+        kwargs={'aslug': 'funnel_order'},
     ),
 ]

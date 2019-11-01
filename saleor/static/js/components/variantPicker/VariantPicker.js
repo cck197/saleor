@@ -74,8 +74,8 @@ export default observer(
             quantity: quantity,
             variant: store.variant.id
           },
-          success: () => {
-            onAddToCheckoutSuccess();
+          success: response => {
+            onAddToCheckoutSuccess(response);
           },
           error: response => {
             onAddToCheckoutError(response);
