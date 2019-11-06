@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.db import transaction
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from django.utils.translation import pgettext
 
@@ -18,6 +18,7 @@ from ..utils import (
     update_billing_address_in_checkout,
     update_billing_address_in_checkout_with_shipping,
 )
+from ...product.models import Collection
 
 
 @transaction.atomic()
@@ -50,6 +51,21 @@ def _handle_order_placement(request, checkout):
             ),
         )
         return redirect("checkout:summary")
+
+    # Check for funnel and remaining upsells
+    meta = checkout.get_meta('funnel', 'funnel')
+    if meta:
+        funnel = get_object_or_404(Collection, slug=meta['slug'])
+        funnel_index = meta['funnel_index']
+        if funnel.products.count() > funnel_index:
+            meta['next'] = request.path
+            checkout.store_meta('funnel', 'funnel', meta)
+            checkout.save()
+            return redirect(
+                "product:funnel",
+                slug=funnel.slug,
+                pk=funnel.id,
+                funnel_index=funnel_index)
 
     # Push the order data into the database
     order = create_order(checkout=checkout, order_data=order_data, user=request.user)

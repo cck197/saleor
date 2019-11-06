@@ -11,6 +11,7 @@ from django.http import (
     JsonResponse,
 )
 from django.shortcuts import get_object_or_404, redirect
+from django.http import Http404
 from django.template.response import TemplateResponse
 from django.urls import reverse
 from draftjs_sanitizer import SafeJSONEncoder
@@ -150,11 +151,12 @@ def digital_product(request, token: str) -> Union[FileResponse, HttpResponseNotF
     return response
 
 
-def funnel_add_to_checkout(request, funnel_slug, slug, product_id):
-    print(f'funnel_add_to_checkout: {funnel_slug}')
-    return product_add_to_checkout(request, slug, product_id)
+def funnel_add_to_checkout(request, funnel_slug, slug, product_id, funnel_index):
+    return product_add_to_checkout(
+        request, slug, product_id, funnel_slug=funnel_slug, funnel_index=funnel_index)
 
-def product_add_to_checkout(request, slug, product_id):
+def product_add_to_checkout(
+    request, slug, product_id, funnel_slug=None, funnel_index=None):
     # types: (int, str, dict) -> None
 
     if not request.method == "POST":
@@ -175,10 +177,19 @@ def product_add_to_checkout(request, slug, product_id):
     )
     if form.is_valid():
         form.save()
+        next_url = reverse("checkout:index")
+        if funnel_slug is not None:
+            meta = form.checkout.get_meta('funnel', 'funnel')
+            meta.update({'slug': funnel_slug, 'funnel_index': int(funnel_index) + 1})
+            next_url = meta.get('next', next_url)
+            # Tag the checkout to identify it as a funnel so we can do the upsell later.
+            form.checkout.store_meta('funnel', 'funnel', meta)
+            form.checkout.save()
+        print(f'product_add_to_checkout: {next_url} {request.is_ajax()}')
         if request.is_ajax():
-            response = JsonResponse({"next": reverse("checkout:index")}, status=200)
+            response = JsonResponse({"next": next_url}, status=200)
         else:
-            response = redirect("checkout:index")
+            response = redirect(next_url)
     else:
         if request.is_ajax():
             response = JsonResponse({"error": form.errors}, status=400)
@@ -236,18 +247,21 @@ def collection_index(request, slug, pk):
 
 from .models import Attribute
 
-def funnel_index(request, slug, pk, aslug):
+def funnel_index(request, slug, pk, aslug, funnel_index=0):
     collections = collections_visible_to_user(request.user).prefetch_related(
         "translations"
     )
     collection = get_object_or_404(collections, id=pk)
     if collection.slug != slug:
         return HttpResponsePermanentRedirect(collection.get_absolute_url())
-    product = (
-        products_for_products_list(user=request.user)
-        .filter(collections__id=collection.id)
-        .sort_by_attribute(Attribute.objects.get(slug=aslug))
-    ).first()
+    try:
+        product = (
+            products_for_products_list(user=request.user)
+            .filter(collections__id=collection.id)
+            .sort_by_attribute(Attribute.objects.get(slug=aslug))
+        )[int(funnel_index)]
+    except KeyError:
+        raise Http404("Collection doesn't exist")
     today = datetime.date.today()
     is_visible = product.publication_date is None or product.publication_date <= today
     checkout = get_checkout_from_request(request)
@@ -284,6 +298,7 @@ def funnel_index(request, slug, pk, aslug):
         "description_html": product.translated.description,
         "is_visible": is_visible,
         'funnel_slug': collection.slug,
+        'funnel_index': funnel_index,
         "form": form,
         "availability": availability,
         "product": product,

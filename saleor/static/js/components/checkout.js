@@ -64,8 +64,8 @@ export default $(document).ready(e => {
         variant: variant,
         quantity: quantity
       },
-      success: () => {
-        onAddToCheckoutSuccess();
+      success: response => {
+        onAddToCheckoutSuccess(response);
       },
       error: response => {
         onAddToCheckoutError(response);

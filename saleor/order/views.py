@@ -108,12 +108,15 @@ def start_payment(request, order, gateway):
             return redirect(order.get_absolute_url())
 
         form = payment_gateway.create_payment_form(payment, data=request.POST or None)
+        print(f'start_payment: {form.is_valid()}')
         if form.is_valid():
             try:
+                print(f'start_payment: payment: {payment}, token: {form.get_payment_token()}')
                 payment_gateway.process_payment(
                     payment=payment, token=form.get_payment_token()
                 )
             except Exception as exc:
+                print(f'start_payment: exc: {exc}')
                 form.add_error(None, str(exc))
             else:
                 if order.is_fully_paid():
@@ -129,6 +132,7 @@ def start_payment(request, order, gateway):
         "client_token": client_token,
         "order": order,
     }
+    print(f'start_payment: {ctx}')
     template_path = payment_gateway.get_template_path(payment.gateway)
     return TemplateResponse(request, template_path, ctx)
 
