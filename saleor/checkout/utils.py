@@ -1064,7 +1064,7 @@ def create_line_for_order(checkout_line: "CheckoutLine", discounts) -> OrderLine
         quantity=quantity,
         variant=variant,
         unit_price=unit_price,
-        tax_rate=unit_price.tax / unit_price.net,
+        tax_rate=unit_price.tax / unit_price.net if unit_price.net else 0,
     )
 
     return line
