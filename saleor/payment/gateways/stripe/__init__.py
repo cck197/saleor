@@ -24,9 +24,9 @@ from .forms import StripePaymentForm
 
 logger = logging.getLogger(__name__)
 
-def create_form(data, payment_information, response):
+def create_form(data, payment_information):
     return StripePaymentForm(
-        data=data, payment_information=payment_information, response=response
+        data=data, payment_information=payment_information
     )
 
 
@@ -54,7 +54,7 @@ def authorize(
 
     try:
         intent = client.PaymentIntent.create(
-            payment_method="pm_card_pl",
+            payment_method=payment_information.token,
             amount=stripe_amount,
             currency=currency,
             confirmation_method="manual",
@@ -64,7 +64,7 @@ def authorize(
             customer=customer_id,
             shipping=shipping,
         )
-        logging.debug(f'store_customer: {config.store_customer}')
+        print(f'authorize: intent={intent}')
         if config.store_customer and not customer_id:
             customer = client.Customer.create(payment_method=intent.payment_method)
             customer_id = customer.id

@@ -173,10 +173,7 @@ class StripeGatewayPlugin(BasePlugin):
     def create_form(
         self, data, payment_information: "PaymentData", previous_value
     ) -> "forms.Form":
-        # Create the PaymentIntent and populate the form with the client_secret.
-        # Stash the response so we can return it in authorize()
-        self.auth_response = authorize(payment_information, self._get_gateway_config())
-        return create_form(data, payment_information, self.auth_response)
+        return create_form(data, payment_information)
 
     @require_active_plugin
     def get_client_token(self, token_config: "TokenConfig", previous_value):
