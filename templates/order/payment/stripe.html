@@ -2,14 +2,76 @@
 {% load i18n %}
 
 {% block forms %}
+
   <form method="POST" id="payment-form" {% if form.action %} action="{{ form.action }}"{% endif %} novalidate>
+    <div class="form-group">
+      <input class="form-control" id='cardholder-name' name="cardholder-name" placeholder="Cardholder Name" required/>
+    </div><!-- form-group -->
+    <div class="form-group">
+      <div id="card-element" class="stripe" style="padding-top: .55rem;"></div>
+    </div><!-- form-group -->
+    <button id="card-button" class="btn btn-primary btn-block" data-secret="{{ form.client_secret.value }}">
+      {% trans "Make payment" context "Payment form primary action" %}
+    </button>
+    <div class="outcome">
+      <div class="error"></div>
+    </div>
     {% csrf_token %}
-    {{ form.media }}
-    {{ form }}
     {% if form.errors %}
       <a class="btn" href="{% url "order:details" token=payment.order.token %}">
         {% trans "Change payment" context "Payment form (Stripe) secondary action" %}
       </a>
     {% endif %}
+    {{ form.client_secret.as_hidden }}
   </form>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+stripe = Stripe('{{ client_token }}');
+var options = {
+  fonts:[{cssSrc: 'https://fonts.googleapis.com/css?family=Lato',}]
+};
+var elements = stripe.elements(options);
+
+var card = elements.create('card', {
+  classes: {
+    base: 'form-control',
+  },
+  
+  style: {
+    base: {
+      iconColor: '#333333',
+      color: '#333333',
+      fontFamily: '"Lato", sans-serif',
+      fontWeight: 'lighter',
+    },
+  }
+});
+card.mount('#card-element');
+
+var cardholderName = document.getElementById('cardholder-name');
+var cardButton = document.getElementById('card-button');
+var clientSecret = cardButton.dataset.secret;
+
+cardButton.addEventListener('click', function(ev) {
+  stripe.handleCardPayment(
+    clientSecret, cardElement, {
+      payment_method_data: {
+        billing_details: {name: cardholderName.value}
+      }
+    }
+  ).then(function(result) {
+    if (result.error) {
+      var errorElement = document.querySelector('.error');
+      // Display error.message in your UI.
+      errorElement.textContent = result.error.message;
+      errorElement.classList.add('visible');
+    } else {
+      // The payment has succeeded. Display a success message.
+      var form = $('#payment-form');
+      form.submit();
+    }
+  });
+});
+</script>
 {% endblock forms %}
