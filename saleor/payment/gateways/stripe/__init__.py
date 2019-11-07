@@ -64,7 +64,6 @@ def authorize(
             customer=customer_id,
             shipping=shipping,
         )
-        print(f'authorize: intent={intent}')
         if config.store_customer and not customer_id:
             customer = client.Customer.create(payment_method=intent.payment_method)
             customer_id = customer.id

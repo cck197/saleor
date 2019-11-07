@@ -98,7 +98,6 @@ class StripeGatewayPlugin(BasePlugin):
                 },
                 store_customer=configuration["Store customers card"],
             )
-        self.auth_response = None
 
 
     @classmethod
@@ -132,9 +131,7 @@ class StripeGatewayPlugin(BasePlugin):
     def authorize_payment(
         self, payment_information: "PaymentData", previous_value
     ) -> "GatewayResponse":
-        return self.auth_response if self.auth_response else authorize(
-            payment_information, self._get_gateway_config()
-        )
+        return authorize(payment_information, self._get_gateway_config())
 
 
     @require_active_plugin
