@@ -18,6 +18,7 @@ from ..payment.utils import create_payment, fetch_customer_id
 from . import FulfillmentStatus
 from .forms import CustomerNoteForm, PasswordForm, PaymentDeleteForm, PaymentsForm
 from .models import Order
+from ..product.models import Collection
 from .utils import attach_order_to_user, check_order_status
 
 logger = logging.getLogger(__name__)
@@ -166,6 +167,23 @@ def checkout_success(request, token):
     is attached to their account.
     """
     order = get_object_or_404(Order, token=token)
+
+    meta = order.get_meta('funnel', 'funnel')
+    # Check for funnel and remaining upsells
+    print(f'checkout_success: token: {order.token} meta: {meta}')
+    if meta:
+        funnel = get_object_or_404(Collection, slug=meta['slug'])
+        funnel_index = meta['funnel_index']
+        if funnel.products.count() > funnel_index:
+            meta['next'] = request.path
+            order.store_meta('funnel', 'funnel', meta)
+            order.save()
+            return redirect(
+                "product:funnel",
+                slug=funnel.slug,
+                pk=funnel.id,
+                funnel_index=funnel_index,
+                token=order.token)
     email = order.user_email
     ctx = {"email": email, "order": order}
     if request.user.is_authenticated:

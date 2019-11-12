@@ -18,7 +18,6 @@ from ..utils import (
     update_billing_address_in_checkout,
     update_billing_address_in_checkout_with_shipping,
 )
-from ...product.models import Collection
 
 
 @transaction.atomic()
@@ -52,23 +51,14 @@ def _handle_order_placement(request, checkout):
         )
         return redirect("checkout:summary")
 
-    # Check for funnel and remaining upsells
-    meta = checkout.get_meta('funnel', 'funnel')
-    if meta:
-        funnel = get_object_or_404(Collection, slug=meta['slug'])
-        funnel_index = meta['funnel_index']
-        if funnel.products.count() > funnel_index:
-            meta['next'] = request.path
-            checkout.store_meta('funnel', 'funnel', meta)
-            checkout.save()
-            return redirect(
-                "product:funnel",
-                slug=funnel.slug,
-                pk=funnel.id,
-                funnel_index=funnel_index)
-
     # Push the order data into the database
     order = create_order(checkout=checkout, order_data=order_data, user=request.user)
+
+    meta = checkout.get_meta('funnel', 'funnel')
+    print(f'_handle_order_placement: token: {order.token} meta: {meta}')
+    # stash the meta data in the order b/c the checkout is about to go away
+    order.store_meta('funnel', 'funnel', meta)
+    order.save()
 
     # remove checkout after order is created
     checkout.delete()

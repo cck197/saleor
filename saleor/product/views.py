@@ -151,12 +151,17 @@ def digital_product(request, token: str) -> Union[FileResponse, HttpResponseNotF
     return response
 
 
-def funnel_add_to_checkout(request, funnel_slug, slug, product_id, funnel_index):
+def funnel_add_to_checkout(
+    request, funnel_slug, slug, product_id, funnel_index, token=None
+):
     return product_add_to_checkout(
-        request, slug, product_id, funnel_slug=funnel_slug, funnel_index=funnel_index)
+        request, slug, product_id, funnel_slug=funnel_slug,
+        funnel_index=funnel_index, token=token
+    )
 
 def product_add_to_checkout(
-    request, slug, product_id, funnel_slug=None, funnel_index=None):
+    request, slug, product_id, funnel_slug=None, funnel_index=None, token=None
+):
     # types: (int, str, dict) -> None
 
     if not request.method == "POST":
@@ -180,12 +185,16 @@ def product_add_to_checkout(
         next_url = reverse("checkout:index")
         if funnel_slug is not None:
             meta = form.checkout.get_meta('funnel', 'funnel')
-            meta.update({'slug': funnel_slug, 'funnel_index': int(funnel_index) + 1})
+            meta.update({
+                'slug': funnel_slug,
+                'funnel_index': int(funnel_index) + 1,
+                'token': token,
+            })
             next_url = meta.get('next', next_url)
             # Tag the checkout to identify it as a funnel so we can do the upsell later.
             form.checkout.store_meta('funnel', 'funnel', meta)
             form.checkout.save()
-        print(f'product_add_to_checkout: {next_url} {request.is_ajax()}')
+        print(f'product_add_to_checkout: next_url: {next_url} token: {token}')
         if request.is_ajax():
             response = JsonResponse({"next": next_url}, status=200)
         else:
@@ -247,10 +256,11 @@ def collection_index(request, slug, pk):
 
 from .models import Attribute
 
-def funnel_index(request, slug, pk, aslug, funnel_index=0):
+def funnel_index(request, slug, pk, aslug, funnel_index=0, token=None):
     collections = collections_visible_to_user(request.user).prefetch_related(
         "translations"
     )
+    print(f'funnel_index: token: {token}')
     collection = get_object_or_404(collections, id=pk)
     if collection.slug != slug:
         return HttpResponsePermanentRedirect(collection.get_absolute_url())
@@ -302,6 +312,7 @@ def funnel_index(request, slug, pk, aslug, funnel_index=0):
         "form": form,
         "availability": availability,
         "product": product,
+        "token": token,
         "product_images": product_images,
         "show_variant_picker": show_variant_picker,
         "variant_picker_data": json.dumps(

@@ -1,5 +1,6 @@
 from django.conf.urls import url
 
+from ..core import TOKEN_PATTERN
 from . import views
 
 urlpatterns = [
@@ -17,6 +18,11 @@ urlpatterns = [
         r"^category/(?P<slug>[a-z0-9-_]+?)-(?P<category_id>[0-9]+)/$",
         views.category_index,
         name="category",
+    ),
+    url(
+        r"(?P<funnel_slug>[a-z0-9-_]+?)/(?P<slug>[a-z0-9-_]+?)-(?P<product_id>[0-9]+)-(?P<funnel_index>[0-9]+)/%s/add/$" % (TOKEN_PATTERN,),
+        views.funnel_add_to_checkout,
+        name="funnel-add-to-checkout",
     ),
     url(
         r"(?P<funnel_slug>[a-z0-9-_]+?)/(?P<slug>[a-z0-9-_]+?)-(?P<product_id>[0-9]+)-(?P<funnel_index>[0-9]+)/add/$",
@@ -41,6 +47,12 @@ urlpatterns = [
     ),
     url(
         r"^funnel/(?P<slug>[a-z0-9-_/]+?)-(?P<pk>[0-9]+)/(?P<funnel_index>[0-9]+)/$",
+        views.funnel_index,
+        name="funnel",
+        kwargs={'aslug': 'funnel_order'},
+    ),
+    url(
+        r"^funnel/(?P<slug>[a-z0-9-_/]+?)-(?P<pk>[0-9]+)/(?P<funnel_index>[0-9]+)/%s$" % (TOKEN_PATTERN,),
         views.funnel_index,
         name="funnel",
         kwargs={'aslug': 'funnel_order'},

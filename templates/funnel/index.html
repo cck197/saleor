@@ -163,7 +163,11 @@
       {% endif %}
       {% if is_visible and product.is_in_stock %}
         {% block orderform %}
+          {% if token %}
+          {% url 'product:funnel-add-to-checkout' funnel_slug=funnel_slug product_id=product.pk slug=product.get_slug funnel_index=funnel_index token=token as the_url %}
+          {% else %}
           {% url 'product:funnel-add-to-checkout' funnel_slug=funnel_slug product_id=product.pk slug=product.get_slug funnel_index=funnel_index as the_url %}
+          {% endif %}
           {% if show_variant_picker %}
             {% csrf_token %}
             <div id="variant-picker" data-variant-picker-data="{{ variant_picker_data }}" data-action="{{ the_url }}"></div>

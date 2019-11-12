@@ -10,6 +10,9 @@ from ...core.utils import format_money, get_user_shipping_country, to_local_curr
 from ..forms import CheckoutShippingMethodForm, CountryForm, ReplaceCheckoutLineForm
 from ..models import Checkout
 from ..utils import (
+    prepare_order_data,
+    create_order,
+    get_checkout_context,
     check_product_availability_and_warn,
     get_checkout_context,
     get_or_empty_db_checkout,
@@ -167,6 +170,18 @@ def checkout_index(request, checkout):
             "shipping_price_range": shipping_price_range,
         }
     )
+    meta = checkout.get_meta('funnel', 'funnel')
+    if meta:
+        from ...core import analytics
+        order_data = prepare_order_data(
+            checkout=checkout,
+            tracking_code=analytics.get_client_id(request),
+            discounts=request.discounts,
+        )
+        order = create_order(checkout=checkout, order_data=order_data, user=request.user, send_email=False)
+        print(f'checkout_index: meta: {meta}')
+        print(f'checkout_index: order: {order}')
+    print(f'checkout_index: checkout_lines: {checkout_lines}')
     return TemplateResponse(request, "checkout/index.html", context)
 
 
