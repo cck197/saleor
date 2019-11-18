@@ -9,6 +9,7 @@ from ...core.taxes import get_display_price, quantize_price, zero_taxed_money
 from ...core.utils import format_money, get_user_shipping_country, to_local_currency
 from ..forms import CheckoutShippingMethodForm, CountryForm, ReplaceCheckoutLineForm
 from ..models import Checkout
+from ...product.models import Collection
 from ..utils import (
     prepare_order_data,
     create_order,
@@ -19,7 +20,9 @@ from ..utils import (
     get_shipping_price_estimate,
     is_valid_shipping_method,
     update_checkout_quantity,
+    upsell_order,
 )
+from ...order.models import Order
 from .discount import add_voucher_form, validate_voucher
 from .shipping import anonymous_user_shipping_address_view, user_shipping_address_view
 from .summary import (
@@ -33,6 +36,9 @@ from .validators import (
     validate_shipping_address,
     validate_shipping_method,
 )
+from ...core import analytics
+from ...payment.gateway import process_payment
+from ...payment.utils import create_payment
 
 
 @get_or_empty_db_checkout(Checkout.objects.for_display())
@@ -121,6 +127,44 @@ def checkout_index(request, checkout):
     except Checkout.DoesNotExist:
         pass
 
+    meta = checkout.get_meta('funnel', 'funnel')
+    if meta:
+        print(f'checkout_index: meta: {meta}')
+        token = meta.get('token')
+        if token:
+            order = get_object_or_404(Order, token=token)
+            upsell_order(order, checkout, analytics.get_client_id(request))
+            payment = order.payments.first()
+            payment = create_payment(
+                gateway=payment.gateway,
+                currency=order.total.gross.currency,
+                email=order.user_email,
+                billing_address=order.billing_address,
+                customer_ip_address=payment.customer_ip_address,
+                total=abs(order.total_balance.amount),
+                order=order,
+                extra_data=meta,
+            )
+            transaction = process_payment(payment, token)
+            funnel_index = meta['funnel_index'] + 1
+            meta_ = order.get_meta('funnel', 'funnel')
+            meta_.update(meta)
+            meta_['funnel_index'] = funnel_index
+            funnel = get_object_or_404(Collection, slug=meta['slug'])
+            print(f'checkout_index: count: {funnel.products.count()} meta_: {meta_}')
+            order.store_meta('funnel', 'funnel', meta_)
+            order.save()
+            checkout.delete()
+            if funnel_index > funnel.products.count():
+                return redirect(meta_['next'])
+            else:
+                return redirect(
+                    "product:funnel",
+                    slug=funnel.slug,
+                    pk=funnel.id,
+                    funnel_index=funnel_index,
+                    token=order.token)
+
     lines = checkout.lines.select_related("variant__product__product_type")
     lines = lines.prefetch_related(
         "variant__translations",
@@ -170,18 +214,6 @@ def checkout_index(request, checkout):
             "shipping_price_range": shipping_price_range,
         }
     )
-    meta = checkout.get_meta('funnel', 'funnel')
-    if meta:
-        from ...core import analytics
-        order_data = prepare_order_data(
-            checkout=checkout,
-            tracking_code=analytics.get_client_id(request),
-            discounts=request.discounts,
-        )
-        order = create_order(checkout=checkout, order_data=order_data, user=request.user, send_email=False)
-        print(f'checkout_index: meta: {meta}')
-        print(f'checkout_index: order: {order}')
-    print(f'checkout_index: checkout_lines: {checkout_lines}')
     return TemplateResponse(request, "checkout/index.html", context)
 
 

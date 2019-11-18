@@ -41,6 +41,9 @@ from .utils.digital_products import (
 )
 from .utils.variants_picker import get_variant_picker_data
 
+from .models import Attribute
+from ..order.models import Order
+
 
 def product_details(request, slug, product_id, form=None):
     """Product details page.
@@ -254,7 +257,17 @@ def collection_index(request, slug, pk):
     ctx.update({"object": collection})
     return TemplateResponse(request, "collection/index.html", ctx)
 
-from .models import Attribute
+def funnel_decline(request, token):
+    order = get_object_or_404(Order, token=token)
+    meta = order.get_meta('funnel', 'funnel')
+    funnel_index = meta['funnel_index']
+    meta.update({
+        'funnel_index': int(funnel_index) + 1,
+    })
+    order.store_meta('funnel', 'funnel', meta)
+    order.save()
+    return redirect(meta['next'])
+
 
 def funnel_index(request, slug, pk, aslug, funnel_index=0, token=None):
     collections = collections_visible_to_user(request.user).prefetch_related(

@@ -53,6 +53,9 @@ from .forms import (
 )
 from .models import Checkout, CheckoutLine
 
+from ..product.utils import allocate_stock
+from ..order.utils import add_gift_card_to_order
+
 COOKIE_NAME = "checkout"
 
 
@@ -1070,6 +1073,31 @@ def create_line_for_order(checkout_line: "CheckoutLine", discounts) -> OrderLine
     return line
 
 
+@transaction.atomic
+def upsell_order(order: Order, checkout: Checkout, tracking_code: str):
+    order_data = prepare_order_data(
+        checkout=checkout,
+        tracking_code=tracking_code,
+        discounts=None
+    )
+    order_lines = order_data['lines']
+    # allocate stocks from the lines
+    for line in order_lines:  # type: OrderLine
+        order.lines.add(line, bulk=False)
+        variant = line.variant
+        if variant.track_inventory:
+            allocate_stock(variant, line.quantity)
+
+    # Add gift cards to the order
+    for gift_card in checkout.gift_cards.select_for_update():
+        total_price_left = add_gift_card_to_order(order, gift_card, total_price_left)
+
+    order.total += order_data['total']
+
+    order.save()
+    return order
+
+
 def prepare_order_data(*, checkout: Checkout, tracking_code: str, discounts) -> dict:
     """Run checks and return all the data from a given checkout to create an order.
 
@@ -1126,7 +1154,7 @@ def abort_order_data(order_data: dict):
 
 
 @transaction.atomic
-def create_order(*, checkout: Checkout, order_data: dict, user: User, send_email=True) -> Order:
+def create_order(*, checkout: Checkout, order_data: dict, user: User, send_email=False) -> Order:
     """Create an order from the checkout.
 
     Each order will get a private copy of both the billing and the shipping
@@ -1138,8 +1166,6 @@ def create_order(*, checkout: Checkout, order_data: dict, user: User, send_email
     Current user's language is saved in the order so we can later determine
     which language to use when sending email.
     """
-    from ..product.utils import allocate_stock
-    from ..order.utils import add_gift_card_to_order
 
     order = Order.objects.filter(checkout_token=checkout.token).first()
     if order is not None:

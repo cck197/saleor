@@ -56,7 +56,9 @@ def _handle_order_placement(request, checkout):
 
     meta = checkout.get_meta('funnel', 'funnel')
     print(f'_handle_order_placement: token: {order.token} meta: {meta}')
-    # stash the meta data in the order b/c the checkout is about to go away
+    meta_ = order.get_meta('funnel', 'funnel')
+    meta_.update(meta)
+    print(f'_handle_order_placement: meta_: {meta_}')
     order.store_meta('funnel', 'funnel', meta)
     order.save()
 

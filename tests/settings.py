@@ -30,6 +30,7 @@ if "sqlite" in DATABASES["default"]["ENGINE"]:  # noqa
         "NAME": ":memory:",
         "MIRROR": None,
     }
+#DATABASES = {'default': {'NAME': 'saleor', 'USER': 'saleor', 'PASSWORD': 'saleor', 'HOST': 'localhost', 'PORT': 5432, 'CONN_MAX_AGE': 600, 'ENGINE': 'django.db.backends.postgresql_psycopg2'}}
 
 COUNTRIES_ONLY = None
 

@@ -317,6 +317,9 @@ class Order(ModelWithMetadata):
 
     @property
     def total_captured(self):
+        return self._total_paid().net
+        '''
+        # FIXME how does it make sense to only look at the most recent payment?
         payment = self.get_last_payment()
         if payment and payment.charge_status in (
             ChargeStatus.PARTIALLY_CHARGED,
@@ -325,6 +328,7 @@ class Order(ModelWithMetadata):
         ):
             return Money(payment.captured_amount, payment.currency)
         return zero_money()
+        '''
 
     @property
     def total_balance(self):

@@ -35,6 +35,11 @@ urlpatterns = [
         name="add-to-checkout",
     ),
     url(
+        r"%s/funnel-decline/$" % (TOKEN_PATTERN,),
+        views.funnel_decline,
+        name="funnel-decline",
+    ),
+    url(
         r"^collection/(?P<slug>[a-z0-9-_/]+?)-(?P<pk>[0-9]+)/$",
         views.collection_index,
         name="collection",

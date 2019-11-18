@@ -305,6 +305,11 @@ if ENABLE_SILK:
     MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
     INSTALLED_APPS.append("silk")
 
+def skip_static_requests(record):
+    if record.args[0].startswith('GET /static/'):  # filter whatever you want
+        return False
+    return True
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -315,9 +320,12 @@ LOGGING = {
                 "%(levelname)s %(name)s %(message)s [PID:%(process)d:%(threadName)s]"
             )
         },
-        "simple": {"format": "%(levelname)s %(message)s"},
+        #"simple": {"format": "%(levelname)s %(message)s"},
     },
-    "filters": {"require_debug_false": {"()": "django.utils.log.RequireDebugFalse"}},
+    "filters": {"require_debug_false": {"()": "django.utils.log.RequireDebugFalse"}, 'skip_static_requests': {
+            '()': 'django.utils.log.CallbackFilter',
+            'callback': skip_static_requests
+        }},
     "handlers": {
         "mail_admins": {
             "level": "ERROR",
@@ -333,11 +341,11 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["console", "mail_admins"],
-            "level": "INFO",
+            "level": "ERROR",
             "propagate": True,
         },
-        "django.server": {"handlers": ["console"], "level": "INFO", "propagate": True},
-        "saleor": {"handlers": ["console"], "level": "DEBUG", "propagate": True},
+        #"django.server": {"handlers": ["console"], "level": "INFO", "propagate": True},
+        #"saleor": {"handlers": ["console"], "level": "DEBUG", "propagate": True},
     },
 }
 
