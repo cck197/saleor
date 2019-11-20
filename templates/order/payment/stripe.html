@@ -14,7 +14,7 @@
       {% trans "Make payment" context "Payment form primary action" %}
     </button>
     <div class="outcome">
-      <div class="error"></div>
+      <div id="error" class="error"></div>
     </div>
     {% csrf_token %}
     {% if form.errors or form.non_field_errors %}
@@ -63,6 +63,7 @@ var cardholderName = document.getElementById('cardholder-name');
 var cardButton = document.getElementById('card-button');
 var payment_method_id = document.getElementById('id_payment_method_id');
 var form = document.getElementById('payment-form');
+var errorElement = document.getElementById('error')
 
 cardButton.addEventListener('click', function(ev) {
   ev.preventDefault();

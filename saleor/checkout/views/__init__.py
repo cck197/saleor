@@ -135,7 +135,7 @@ def checkout_index(request, checkout):
             order = get_object_or_404(Order, token=token)
             upsell_order(order, checkout, analytics.get_client_id(request))
             payment = order.payments.first()
-            payment = create_payment(
+            payment_ = create_payment(
                 gateway=payment.gateway,
                 currency=order.total.gross.currency,
                 email=order.user_email,
@@ -145,7 +145,10 @@ def checkout_index(request, checkout):
                 order=order,
                 extra_data=meta,
             )
-            transaction = process_payment(payment, token)
+            transaction = payment.transactions.first()
+            token = transaction.gateway_response['payment_method']
+            customer_id = transaction.customer_id
+            transaction_ = process_payment(payment_, token, store_source=True, customer_id=customer_id)
             funnel_index = meta['funnel_index'] + 1
             meta_ = order.get_meta('funnel', 'funnel')
             meta_.update(meta)

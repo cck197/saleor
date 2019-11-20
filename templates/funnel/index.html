@@ -201,6 +201,7 @@
         <hr>
         {% format_content content_json=description_json content_html=description_html %}
       </div>
+      {% if token %}
       <div class="product__info__description">
         <div class="form-group product__info__button">
           <a href="{% url 'product:funnel-decline' token=token %}" class="btn btn-secondary">
@@ -208,6 +209,7 @@
           </a>
         </div>
       </div>
+      {% endif %}
       <hr>
       <table>
         {% for attribute_rel in product.attributes.all %}

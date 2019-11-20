@@ -55,12 +55,14 @@ def require_active_payment(fn):
 @raise_payment_error
 @require_active_payment
 def process_payment(
-    payment: Payment, token: str, store_source: bool = False
+    payment: Payment, token: str, store_source: bool = False, customer_id: str = None,
 ) -> Transaction:
     plugin_manager = get_extensions_manager()
+    print(f'process_payment: token: {token} store_source: {store_source}')
     payment_data = create_payment_information(
-        payment=payment, payment_token=token, store_source=store_source
+        payment=payment, payment_token=token, store_source=store_source, customer_id=customer_id,
     )
+    print(f'process_payment: reuse_source: {payment_data.reuse_source}')
     response, error = _fetch_gateway_response(
         plugin_manager.process_payment, payment.gateway, payment_data
     )
