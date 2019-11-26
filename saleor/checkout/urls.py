@@ -5,6 +5,7 @@ from .views.discount import remove_voucher_view
 
 checkout_urlpatterns = [
     url(r"^$", views.checkout_index, name="index"),
+    url(r"^single$", views.checkout_index, name="single", kwargs={'single_page': True}),
     url(r"^start$", views.checkout_start, name="start"),
     url(
         r"^update/(?P<variant_id>\d+)/$", views.update_checkout_line, name="update-line"

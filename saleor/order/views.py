@@ -114,7 +114,7 @@ def start_payment(request, order, gateway):
             try:
                 print(f'start_payment: payment: {payment}, token: {form.get_payment_token()}')
                 payment_gateway.process_payment(
-                    payment=payment, token=form.get_payment_token()
+                    payment=payment, token=form.get_payment_token(), store_source=True,
                 )
             except Exception as exc:
                 print(f'start_payment: exc: {exc}')

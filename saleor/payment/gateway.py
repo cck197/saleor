@@ -66,6 +66,7 @@ def process_payment(
     response, error = _fetch_gateway_response(
         plugin_manager.process_payment, payment.gateway, payment_data
     )
+    print(f'process_payment: response: {response}, error: {error}')
     return create_transaction(
         payment=payment,
         kind=TransactionKind.CAPTURE,

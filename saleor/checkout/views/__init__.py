@@ -113,7 +113,7 @@ def checkout_order_summary(request, checkout):
 
 
 @get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())
-def checkout_index(request, checkout):
+def checkout_index(request, checkout, single_page=False):
     """Display checkout details."""
     discounts = request.discounts
     checkout_lines = []
@@ -146,7 +146,7 @@ def checkout_index(request, checkout):
                 extra_data=meta,
             )
             transaction = payment.transactions.first()
-            token = transaction.gateway_response['payment_method']
+            token = transaction.gateway_response.get('payment_method', '')
             customer_id = transaction.customer_id
             transaction_ = process_payment(payment_, token, store_source=True, customer_id=customer_id)
             funnel_index = meta['funnel_index'] + 1
@@ -215,8 +215,13 @@ def checkout_index(request, checkout):
             "checkout_lines": checkout_lines,
             "country_form": country_form,
             "shipping_price_range": shipping_price_range,
+            "single_page": single_page,
         }
     )
+    if single_page:
+        response = checkout_shipping_address(request)
+        print(f'checkout_index: {response.context_data}')
+        context.update({'shipping': response.context_data})
     return TemplateResponse(request, "checkout/index.html", context)
 
 
