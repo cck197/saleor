@@ -77,11 +77,12 @@
         {% include 'checkout/_subtotal_table.html' %}
       </div>
       {% if single_page %}
+      <form method="POST" id="payment-form" novalidate>
       <div class="row">
-        <form method="post" novalidate class="checkout__shipping">
+        <div class="col-md-12">
           {% csrf_token %}
           <h2>{% trans "Shipping address" context "Checkout shipping address title" %}</h2>
-          
+        
           <div class="checkout__addresses{{ request.user.is_authenticated|yesno:",--full-width" }}">
             {% if request.user.is_authenticated %}
               {% include "checkout/snippets/addresses_form.html" with addresses_form=shipping.user_form addresses=shipping.additional_addresses address_form=shipping.address_form only %}
@@ -90,10 +91,44 @@
               {% include "account/snippets/address_form.html" with address_form=shipping.address_form only %}
             {% endif %}
           </div>
-
-        </form>
+        </div>
       </div>
-      {% endif %}
+      <div class="checkout__shipping-methods">
+        {% if shipping_method.shipping_method_form.shipping_method.field.choices %}
+          <h2>
+            {% trans "Shipping method" context "Checkout shipping method form title" %}
+          </h2>
+          <div class="checkout__shipping-methods-form">
+            {% for choice in shipping_method.shipping_method_form.shipping_method %}
+              <div class="radio">
+                <label>
+                  <div class="card card-default">
+                    <div class="card-body">
+                      <strong>
+                        {{choice}}
+                      </strong>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          {% blocktrans context "Message displayed to the user if there's no shipping methods for his country" %}
+            Unfortunately we do not ship to your selected country.
+            <br>
+            Please enter an alternative shipping address or contact us, if you think that's a mistake.
+          {% endblocktrans %}
+        {% endif %}
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <h2>{% trans "Card details" context "Checkout card details" %}</h2>
+          {% include 'order/payment/stripe_inner.html' with form=payment.form payment=payment.payment client_token=payment.client_token order=order %}
+        </div>
+      </div>
+      </form>
+      {% else %}
       <div class="row">
         <div class="col-md-12">
             <a href="{% url "checkout:login" %}" class="btn btn-primary float-right checkout-preview__submit">
@@ -104,6 +139,7 @@
           </button>
         </div>
       </div>
+      {% endif %}
     {% else %}
       <div class="checkout-preview__empty">
         <img class="lazyload lazypreload" data-src="{% static 'images/empty-checkout-bg.png' %}" data-srcset="{% static 'images/empty-checkout-bg.png' %} 1x, {% static 'images/empty-checkout-bg2x.png' %} 2x">

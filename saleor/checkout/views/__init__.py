@@ -23,6 +23,7 @@ from ..utils import (
     upsell_order,
 )
 from ...order.models import Order
+from ...order.views import start_payment
 from .discount import add_voucher_form, validate_voucher
 from .shipping import anonymous_user_shipping_address_view, user_shipping_address_view
 from .summary import (
@@ -219,11 +220,31 @@ def checkout_index(request, checkout, single_page=False):
         }
     )
     if single_page:
-        response = checkout_shipping_address(request)
-        print(f'checkout_index: {response.context_data}')
-        context.update({'shipping': response.context_data})
+        response, is_redirect = call_view(lambda: checkout_shipping_address(request))
+        if not is_redirect:
+            context.update({'shipping': response.context_data})
+        response, is_redirect = call_view(lambda: checkout_shipping_method(request))
+        if not is_redirect:
+            context.update({'shipping_method': response.context_data})
+        order_data = prepare_order_data(
+            checkout=checkout,
+            tracking_code=analytics.get_client_id(request),
+            discounts=discounts,
+        )
+        order = create_order(checkout=checkout, order_data=order_data, user=request.user)
+        order.save()
+        print(f'checkout_index: order: {order.__dict__}')
+        # TODO configure default gateway?
+        response, is_redirect = call_view(lambda: start_payment(request, token=order.token, gateway='Stripe'))
+        if is_redirect: return response
+        print(f'checkout_index: {response}')
+        context.update({'payment': response.context_data})
     return TemplateResponse(request, "checkout/index.html", context)
 
+from django.http import HttpResponseRedirect
+def call_view(func):
+    response = func()
+    return response, type(response) is HttpResponseRedirect
 
 @get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())
 def checkout_shipping_options(request, checkout):
