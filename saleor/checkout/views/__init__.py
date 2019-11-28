@@ -11,7 +11,7 @@ from ..forms import CheckoutShippingMethodForm, CountryForm, ReplaceCheckoutLine
 from ..models import Checkout
 from ...product.models import Collection
 from ..utils import (
-    prepare_order_data,
+    copy_funnel_meta,
     create_order,
     get_checkout_context,
     check_product_availability_and_warn,
@@ -19,6 +19,7 @@ from ..utils import (
     get_or_empty_db_checkout,
     get_shipping_price_estimate,
     is_valid_shipping_method,
+    prepare_order_data,
     update_checkout_quantity,
     upsell_order,
 )
@@ -111,7 +112,6 @@ def checkout_order_summary(request, checkout):
     if request.user.is_authenticated:
         return summary_without_shipping(request, checkout)
     return anonymous_summary_without_shipping(request, checkout)
-
 
 @get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())
 def checkout_index(request, checkout, single_page=False):
@@ -233,10 +233,13 @@ def checkout_index(request, checkout, single_page=False):
         )
         order = create_order(checkout=checkout, order_data=order_data, user=request.user)
         order.save()
+        copy_funnel_meta(checkout, order)
         print(f'checkout_index: order: {order.__dict__}')
         # TODO configure default gateway?
         response, is_redirect = call_view(lambda: start_payment(request, token=order.token, gateway='Stripe'))
-        if is_redirect: return response
+        if is_redirect:
+            checkout.delete()
+            return response
         print(f'checkout_index: {response}')
         context.update({'payment': response.context_data})
     return TemplateResponse(request, "checkout/index.html", context)

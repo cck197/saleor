@@ -89,6 +89,16 @@ def token_is_valid(token):
     return True
 
 
+def copy_funnel_meta(checkout, order):
+    meta = checkout.get_meta('funnel', 'funnel')
+    print(f'copy_funnel_meta: token: {order.token} meta: {meta}')
+    meta_ = order.get_meta('funnel', 'funnel')
+    meta_.update(meta)
+    print(f'copy_funnel_meta: meta_: {meta_}')
+    order.store_meta('funnel', 'funnel', meta)
+    order.save()
+
+
 def remove_unavailable_variants(checkout):
     """Remove any unavailable items from checkout."""
     for line in checkout:

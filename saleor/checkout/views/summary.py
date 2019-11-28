@@ -11,6 +11,7 @@ from ...core.taxes import TaxError
 from ...discount.models import NotApplicable
 from ..forms import CheckoutNoteForm
 from ..utils import (
+    copy_funnel_meta,
     create_order,
     get_checkout_context,
     prepare_order_data,
@@ -54,13 +55,7 @@ def _handle_order_placement(request, checkout):
     # Push the order data into the database
     order = create_order(checkout=checkout, order_data=order_data, user=request.user)
 
-    meta = checkout.get_meta('funnel', 'funnel')
-    print(f'_handle_order_placement: token: {order.token} meta: {meta}')
-    meta_ = order.get_meta('funnel', 'funnel')
-    meta_.update(meta)
-    print(f'_handle_order_placement: meta_: {meta_}')
-    order.store_meta('funnel', 'funnel', meta)
-    order.save()
+    copy_funnel_meta(checkout, order)
 
     # remove checkout after order is created
     checkout.delete()
