@@ -13,7 +13,6 @@ from ...product.models import Collection
 from ..utils import (
     copy_funnel_meta,
     create_order,
-    get_checkout_context,
     check_product_availability_and_warn,
     get_checkout_context,
     get_or_empty_db_checkout,
@@ -22,6 +21,7 @@ from ..utils import (
     prepare_order_data,
     update_checkout_quantity,
     upsell_order,
+    should_redirect,
 )
 from ...order.models import Order
 from ...order.views import start_payment
@@ -90,12 +90,16 @@ def checkout_shipping_method(request, checkout):
         instance=checkout,
         initial={"shipping_method": checkout.shipping_method},
     )
+    updated = False
     if form.is_valid():
         form.save()
-        return redirect("checkout:summary")
+        if should_redirect(request):
+            return redirect("checkout:summary")
+        else:
+            updated = True
 
     ctx = get_checkout_context(checkout, discounts)
-    ctx.update({"shipping_method_form": form})
+    ctx.update({"shipping_method_form": form, "updated": updated})
     return TemplateResponse(request, "checkout/shipping_method.html", ctx)
 
 
@@ -113,6 +117,7 @@ def checkout_order_summary(request, checkout):
         return summary_without_shipping(request, checkout)
     return anonymous_summary_without_shipping(request, checkout)
 
+
 @get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())
 def checkout_index(request, checkout, single_page=False):
     """Display checkout details."""
@@ -128,10 +133,9 @@ def checkout_index(request, checkout, single_page=False):
     except Checkout.DoesNotExist:
         pass
 
-    meta = checkout.get_meta('funnel', 'funnel')
+    meta = checkout.get_meta("funnel", "funnel")
     if meta:
-        print(f'checkout_index: meta: {meta}')
-        token = meta.get('token')
+        token = meta.get("token")
         if token:
             order = get_object_or_404(Order, token=token)
             upsell_order(order, checkout, analytics.get_client_id(request))
@@ -147,27 +151,29 @@ def checkout_index(request, checkout, single_page=False):
                 extra_data=meta,
             )
             transaction = payment.transactions.first()
-            token = transaction.gateway_response.get('payment_method', '')
+            token = transaction.gateway_response.get("payment_method", "")
             customer_id = transaction.customer_id
-            transaction_ = process_payment(payment_, token, store_source=True, customer_id=customer_id)
-            funnel_index = meta['funnel_index'] + 1
-            meta_ = order.get_meta('funnel', 'funnel')
+            transaction_ = process_payment(
+                payment_, token, store_source=True, customer_id=customer_id
+            )
+            funnel_index = meta["funnel_index"] + 1
+            meta_ = order.get_meta("funnel", "funnel")
             meta_.update(meta)
-            meta_['funnel_index'] = funnel_index
-            funnel = get_object_or_404(Collection, slug=meta['slug'])
-            print(f'checkout_index: count: {funnel.products.count()} meta_: {meta_}')
-            order.store_meta('funnel', 'funnel', meta_)
+            meta_["funnel_index"] = funnel_index
+            funnel = get_object_or_404(Collection, slug=meta["slug"])
+            order.store_meta("funnel", "funnel", meta_)
             order.save()
             checkout.delete()
             if funnel_index > funnel.products.count():
-                return redirect(meta_['next'])
+                return redirect(meta_["next"])
             else:
                 return redirect(
                     "product:funnel",
                     slug=funnel.slug,
                     pk=funnel.id,
                     funnel_index=funnel_index,
-                    token=order.token)
+                    token=order.token,
+                )
 
     lines = checkout.lines.select_related("variant__product__product_type")
     lines = lines.prefetch_related(
@@ -220,34 +226,39 @@ def checkout_index(request, checkout, single_page=False):
         }
     )
     if single_page:
-        response, is_redirect = call_view(lambda: checkout_shipping_address(request))
-        if not is_redirect:
-            context.update({'shipping': response.context_data})
-        response, is_redirect = call_view(lambda: checkout_shipping_method(request))
-        if not is_redirect:
-            context.update({'shipping_method': response.context_data})
+        request.redirect = False
         order_data = prepare_order_data(
             checkout=checkout,
             tracking_code=analytics.get_client_id(request),
             discounts=discounts,
         )
-        order = create_order(checkout=checkout, order_data=order_data, user=request.user)
-        order.save()
+        order = create_order(
+            checkout=checkout, order_data=order_data, user=request.user
+        )
         copy_funnel_meta(checkout, order)
-        print(f'checkout_index: order: {order.__dict__}')
         # TODO configure default gateway?
-        response, is_redirect = call_view(lambda: start_payment(request, token=order.token, gateway='Stripe'))
-        if is_redirect:
+        if not order.is_fully_paid():
+            response = start_payment(request, token=order.token, gateway="Stripe")
+        if not order.is_fully_paid():
+            context.update({"payment": response.context_data})
+        response = checkout_shipping_address(request)
+        context.update({"shipping": response.context_data})
+        response = checkout_shipping_method(request)
+        context.update({"shipping_method": response.context_data})
+        checkout.refresh_from_db()
+        order.shipping_address = checkout.shipping_address
+        order.shipping_method = checkout.shipping_method
+        order.save()
+        breakpoint()
+        if (
+            context["shipping"]["updated"]
+            and context["shipping_method"]["updated"]
+            and order.is_fully_paid()
+        ):
             checkout.delete()
-            return response
-        print(f'checkout_index: {response}')
-        context.update({'payment': response.context_data})
+            return redirect("order:payment-success", token=order.token)
     return TemplateResponse(request, "checkout/index.html", context)
 
-from django.http import HttpResponseRedirect
-def call_view(func):
-    response = func()
-    return response, type(response) is HttpResponseRedirect
 
 @get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())
 def checkout_shipping_options(request, checkout):

@@ -197,7 +197,6 @@ def product_add_to_checkout(
             # Tag the checkout to identify it as a funnel so we can do the upsell later.
             form.checkout.store_meta('funnel', 'funnel', meta)
             form.checkout.save()
-        print(f'product_add_to_checkout: next_url: {next_url} token: {token}')
         if request.is_ajax():
             response = JsonResponse({"next": next_url}, status=200)
         else:
@@ -273,7 +272,6 @@ def funnel_index(request, slug, pk, aslug, funnel_index=0, token=None):
     collections = collections_visible_to_user(request.user).prefetch_related(
         "translations"
     )
-    print(f'funnel_index: token: {token}')
     collection = get_object_or_404(collections, id=pk)
     if collection.slug != slug:
         return HttpResponsePermanentRedirect(collection.get_absolute_url())

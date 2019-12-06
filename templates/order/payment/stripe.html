@@ -2,6 +2,6 @@
 
 {% block forms %}
 <form method="POST" id="payment-form" {% if form.action %} action="{{ form.action }}"{% endif %} novalidate>
-{% include 'stripe_inner.html' %}
+{% include 'order/payment/stripe_inner.html' %}
 </form>
 {% endblock forms %}

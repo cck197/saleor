@@ -113,18 +113,18 @@
               </div>
             {% endfor %}
           </div>
-        {% else %}
-          {% blocktrans context "Message displayed to the user if there's no shipping methods for his country" %}
-            Unfortunately we do not ship to your selected country.
-            <br>
-            Please enter an alternative shipping address or contact us, if you think that's a mistake.
-          {% endblocktrans %}
         {% endif %}
       </div>
       <div class="row">
         <div class="col-md-12">
+          {% if payment %}
           <h2>{% trans "Card details" context "Checkout card details" %}</h2>
           {% include 'order/payment/stripe_inner.html' with form=payment.form payment=payment.payment client_token=payment.client_token order=order %}
+          {% else %}
+          <button type="submit" id="card-button" class="btn btn-primary btn-block">
+            {% trans "Make payment" context "Payment form primary action" %}
+          </button>
+          {% endif %}
         </div>
       </div>
       </form>

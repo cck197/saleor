@@ -181,6 +181,12 @@ class CountryAwareAddressForm(AddressForm):
                     )
                 self.add_error(field, ValidationError(error_msg, code=error_code))
 
+    def add_error(self, field, error):
+        # no duplicate errors
+        existing = set([e.message for e in self.errors.as_data().get(field, [])])
+        new = set(error).difference(existing)
+        if new: super().add_error(field, error)
+
     def validate_address(self, data):
         try:
             data["country_code"] = data.get("country", "")

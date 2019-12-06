@@ -91,10 +91,8 @@ def token_is_valid(token):
 
 def copy_funnel_meta(checkout, order):
     meta = checkout.get_meta('funnel', 'funnel')
-    print(f'copy_funnel_meta: token: {order.token} meta: {meta}')
     meta_ = order.get_meta('funnel', 'funnel')
     meta_.update(meta)
-    print(f'copy_funnel_meta: meta_: {meta_}')
     order.store_meta('funnel', 'funnel', meta)
     order.save()
 
@@ -267,6 +265,10 @@ def get_or_empty_db_checkout(checkout_queryset=Checkout.objects.all()):
         return func
 
     return get_checkout
+
+
+def should_redirect(request):
+    return getattr(request, 'redirect', True)
 
 
 def find_open_checkout_for_user(user):
@@ -995,7 +997,7 @@ def _process_shipping_data_for_order(checkout, shipping_price):
 
     shipping_address = checkout.shipping_address
 
-    if checkout.user:
+    if checkout.user and shipping_address:
         store_user_address(checkout.user, shipping_address, AddressType.SHIPPING)
         if checkout.user.addresses.filter(pk=shipping_address.pk).exists():
             shipping_address = shipping_address.get_copy()
@@ -1013,7 +1015,7 @@ def _process_user_data_for_order(checkout):
     """Fetch, process and return shipping data from checkout."""
     billing_address = checkout.billing_address
 
-    if checkout.user:
+    if checkout.user and billing_address:
         store_user_address(checkout.user, billing_address, AddressType.BILLING)
         if checkout.user.addresses.filter(pk=billing_address.pk).exists():
             billing_address = billing_address.get_copy()

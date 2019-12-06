@@ -21,6 +21,8 @@ from .models import Order
 from ..product.models import Collection
 from .utils import attach_order_to_user, check_order_status
 
+from ..checkout.utils import should_redirect
+
 logger = logging.getLogger(__name__)
 
 PAYMENT_TEMPLATE = "order/payment/%s.html"
@@ -103,26 +105,25 @@ def start_payment(request, order, gateway):
         )
 
         if (
-            order.is_fully_paid()
-            or payment.charge_status == ChargeStatus.FULLY_REFUNDED
+            should_redirect(request)
+            and (order.is_fully_paid()
+            or payment.charge_status == ChargeStatus.FULLY_REFUNDED)
         ):
             return redirect(order.get_absolute_url())
 
         form = payment_gateway.create_payment_form(payment, data=request.POST or None)
-        print(f'start_payment: {form.is_valid()}')
         if form.is_valid():
             try:
-                print(f'start_payment: payment: {payment}, token: {form.get_payment_token()}')
                 payment_gateway.process_payment(
                     payment=payment, token=form.get_payment_token(), store_source=True,
                 )
             except Exception as exc:
-                print(f'start_payment: exc: {exc}')
                 form.add_error(None, str(exc))
             else:
-                if order.is_fully_paid():
-                    return redirect("order:payment-success", token=order.token)
-                return redirect(order.get_absolute_url())
+                if should_redirect(request):
+                    if order.is_fully_paid():
+                        return redirect("order:payment-success", token=order.token)
+                    return redirect(order.get_absolute_url())
 
     client_token = payment_gateway.get_client_token(
         payment.gateway, customer_id=fetch_customer_id(request.user, payment.gateway)
@@ -133,7 +134,6 @@ def start_payment(request, order, gateway):
         "client_token": client_token,
         "order": order,
     }
-    print(f'start_payment: {ctx}')
     template_path = payment_gateway.get_template_path(payment.gateway)
     return TemplateResponse(request, template_path, ctx)
 
@@ -170,7 +170,6 @@ def checkout_success(request, token):
 
     meta = order.get_meta('funnel', 'funnel')
     # Check for funnel and remaining upsells
-    print(f'checkout_success: token: {order.token} meta: {meta}')
     if meta:
         funnel = get_object_or_404(Collection, slug=meta['slug'])
         funnel_index = meta['funnel_index']

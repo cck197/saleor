@@ -50,12 +50,14 @@ def check_order_status(func):
     """
     # pylint: disable=cyclic-import
     from .models import Order
+    from ..checkout.utils import should_redirect
 
     @wraps(func)
     def decorator(*args, **kwargs):
         token = kwargs.pop("token")
+        request = args[0]
         order = get_object_or_404(Order.objects.confirmed(), token=token)
-        if not order.billing_address or order.is_fully_paid():
+        if should_redirect(request) and (not order.billing_address or order.is_fully_paid()):
             return redirect("order:details", token=order.token)
         kwargs["order"] = order
         return func(*args, **kwargs)
