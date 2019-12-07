@@ -77,6 +77,8 @@ def create_payment(
     This method is responsible for creating payment instances that works for
     both Django views and GraphQL mutations.
     """
+    if billing_address is None:
+        billing_address = Address()
     defaults = {
         "billing_email": email,
         "billing_first_name": billing_address.first_name,

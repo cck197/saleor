@@ -87,7 +87,7 @@
             {% if request.user.is_authenticated %}
               {% include "checkout/snippets/addresses_form.html" with addresses_form=shipping.user_form addresses=shipping.additional_addresses address_form=shipping.address_form only %}
             {% else %}
-              {% bootstrap_form user_form %}
+              {% bootstrap_form shipping.user_form %}
               {% include "account/snippets/address_form.html" with address_form=shipping.address_form only %}
             {% endif %}
           </div>

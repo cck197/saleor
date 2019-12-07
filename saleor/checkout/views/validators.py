@@ -3,7 +3,7 @@ from functools import wraps
 from django.core.exceptions import ValidationError
 from django.shortcuts import redirect
 
-from ..utils import is_valid_shipping_method
+from ..utils import is_valid_shipping_method, should_redirect
 
 
 def validate_checkout(view):
@@ -32,12 +32,13 @@ def validate_shipping_address(view):
 
     @wraps(view)
     def func(request, checkout):
-        if not checkout.email or not checkout.shipping_address:
-            return redirect("checkout:shipping-address")
-        try:
-            checkout.shipping_address.full_clean()
-        except ValidationError:
-            return redirect("checkout:shipping-address")
+        if should_redirect(request):
+            if not checkout.email or not checkout.shipping_address:
+                return redirect("checkout:shipping-address")
+            try:
+                checkout.shipping_address.full_clean()
+            except ValidationError:
+                return redirect("checkout:shipping-address")
         return view(request, checkout)
 
     return func
@@ -71,7 +72,7 @@ def validate_is_shipping_required(view):
 
     @wraps(view)
     def func(request, checkout):
-        if not checkout.is_shipping_required():
+        if should_redirect(request) and not checkout.is_shipping_required():
             return redirect("checkout:summary")
         return view(request, checkout)
 

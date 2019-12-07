@@ -17,6 +17,7 @@ from ..discount.models import NotApplicable, Voucher
 from ..extensions.manager import get_extensions_manager
 from ..shipping.models import ShippingMethod, ShippingZone
 from .models import Checkout
+from ..account.models import Address
 
 
 class QuantityField(forms.IntegerField):
@@ -325,6 +326,8 @@ class CheckoutShippingMethodForm(forms.ModelForm):
         discounts = kwargs.pop("discounts")
         extensions = get_extensions_manager()
         super().__init__(*args, **kwargs)
+        if self.instance.shipping_address is None:
+            self.instance.shipping_address = Address(country="US")  # TODO not sure
         shipping_address = self.instance.shipping_address
         country_code = shipping_address.country.code
         qs = get_valid_shipping_methods_for_checkout(

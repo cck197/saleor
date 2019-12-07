@@ -1185,7 +1185,6 @@ def create_order(*, checkout: Checkout, order_data: dict, user: User, send_email
 
     total_price_left = order_data.pop("total_price_left")
     order_lines = order_data.pop("lines")
-
     order = Order.objects.create(**order_data, checkout_token=checkout.token)
     order.lines.set(order_lines, bulk=False)
 

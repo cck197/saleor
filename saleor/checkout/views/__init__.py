@@ -249,7 +249,6 @@ def checkout_index(request, checkout, single_page=False):
         order.shipping_address = checkout.shipping_address
         order.shipping_method = checkout.shipping_method
         order.save()
-        breakpoint()
         if (
             context["shipping"]["updated"]
             and context["shipping_method"]["updated"]
