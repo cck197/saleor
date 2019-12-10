@@ -14,7 +14,7 @@ from ..account.forms import LoginForm
 from ..account.models import User
 from ..core.utils import get_client_ip
 from ..payment import ChargeStatus, TransactionKind, gateway as payment_gateway
-from ..payment.utils import create_payment, fetch_customer_id
+from ..payment.utils import create_payment, fetch_customer_id, store_customer_id
 from . import FulfillmentStatus
 from .forms import CustomerNoteForm, PasswordForm, PaymentDeleteForm, PaymentsForm
 from .models import Order
@@ -104,19 +104,24 @@ def start_payment(request, order, gateway):
             extra_data=extra_data,
         )
 
-        if (
-            should_redirect(request)
-            and (order.is_fully_paid()
-            or payment.charge_status == ChargeStatus.FULLY_REFUNDED)
+        if should_redirect(request) and (
+            order.is_fully_paid()
+            or payment.charge_status == ChargeStatus.FULLY_REFUNDED
         ):
             return redirect(order.get_absolute_url())
 
         form = payment_gateway.create_payment_form(payment, data=request.POST or None)
+        customer_id = fetch_customer_id(request.user, payment.gateway)
         if form.is_valid():
             try:
-                payment_gateway.process_payment(
-                    payment=payment, token=form.get_payment_token(), store_source=True,
+                tx = payment_gateway.process_payment(
+                    payment=payment,
+                    token=form.get_payment_token(),
+                    store_source=True,
+                    customer_id=customer_id,
                 )
+                if customer_id is None:
+                    store_customer_id(request.user, payment.gateway, tx.customer_id)
             except Exception as exc:
                 form.add_error(None, str(exc))
             else:
@@ -125,9 +130,7 @@ def start_payment(request, order, gateway):
                         return redirect("order:payment-success", token=order.token)
                     return redirect(order.get_absolute_url())
 
-    client_token = payment_gateway.get_client_token(
-        payment.gateway, customer_id=fetch_customer_id(request.user, payment.gateway)
-    )
+    client_token = payment_gateway.get_client_token(payment.gateway, customer_id)
     ctx = {
         "form": form,
         "payment": payment,
@@ -168,21 +171,22 @@ def checkout_success(request, token):
     """
     order = get_object_or_404(Order, token=token)
 
-    meta = order.get_meta('funnel', 'funnel')
+    meta = order.get_meta("funnel", "funnel")
     # Check for funnel and remaining upsells
     if meta:
-        funnel = get_object_or_404(Collection, slug=meta['slug'])
-        funnel_index = meta['funnel_index']
+        funnel = get_object_or_404(Collection, slug=meta["slug"])
+        funnel_index = meta["funnel_index"]
         if funnel.products.count() > funnel_index:
-            meta['next'] = request.path
-            order.store_meta('funnel', 'funnel', meta)
+            meta["next"] = request.path
+            order.store_meta("funnel", "funnel", meta)
             order.save()
             return redirect(
                 "product:funnel",
                 slug=funnel.slug,
                 pk=funnel.id,
                 funnel_index=funnel_index,
-                token=order.token)
+                token=order.token,
+            )
     email = order.user_email
     ctx = {"email": email, "order": order}
     if request.user.is_authenticated:

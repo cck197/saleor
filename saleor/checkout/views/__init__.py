@@ -135,6 +135,7 @@ def checkout_index(request, checkout, single_page=False):
 
     meta = checkout.get_meta("funnel", "funnel")
     if meta:
+        funnel_index = meta["funnel_index"]
         token = meta.get("token")
         if token:
             order = get_object_or_404(Order, token=token)
@@ -150,13 +151,17 @@ def checkout_index(request, checkout, single_page=False):
                 order=order,
                 extra_data=meta,
             )
-            transaction = payment.transactions.first()
-            token = transaction.gateway_response.get("payment_method", "")
-            customer_id = transaction.customer_id
-            transaction_ = process_payment(
-                payment_, token, store_source=True, customer_id=customer_id
+            tx = payment.transactions.first()
+            token = tx.gateway_response.get("payment_method", "")
+            customer_id = tx.customer_id
+            process_payment(
+                payment_,
+                token,
+                store_source=True,
+                customer_id=customer_id,
+                order_id="{}_{}".format(order.id, funnel_index),
             )
-            funnel_index = meta["funnel_index"] + 1
+            funnel_index = funnel_index + 1
             meta_ = order.get_meta("funnel", "funnel")
             meta_.update(meta)
             meta_["funnel_index"] = funnel_index
@@ -226,6 +231,10 @@ def checkout_index(request, checkout, single_page=False):
         }
     )
     if single_page:
+        # calling the views below as functions invokes a bunch of decorators
+        # that might redirect the request. That's not what we want here for the
+        # single page checkout, so set a flag in the request and check in the
+        # views and decorators.
         request.redirect = False
         order_data = prepare_order_data(
             checkout=checkout,

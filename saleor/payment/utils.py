@@ -30,6 +30,7 @@ def create_payment_information(
     shipping_address: AddressData = None,
     customer_id: str = None,
     store_source: bool = False,
+    order_id: str = None,
 ) -> PaymentData:
     """Extract order information along with payment details.
 
@@ -44,7 +45,8 @@ def create_payment_information(
     if shipping_address is None and payment.order and payment.order.shipping_address:
         shipping = AddressData(**payment.order.shipping_address.as_data())
 
-    order_id = payment.order.pk if payment.order else None
+    if order_id is None:
+        order_id = payment.order.pk if payment.order else None
 
     return PaymentData(
         token=payment_token,

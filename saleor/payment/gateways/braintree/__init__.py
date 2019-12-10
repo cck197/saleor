@@ -132,7 +132,6 @@ def create_token_params(config: GatewayConfig, token_config: TokenConfig) -> dic
 def authorize(
     payment_information: PaymentData, config: GatewayConfig
 ) -> GatewayResponse:
-    print(f'braintree.authorize: payment_information: {payment_information}')
     try:
         if not payment_information.customer_id:
             result = transaction_for_new_customer(payment_information, config)
@@ -142,7 +141,6 @@ def authorize(
         raise BraintreeException(DEFAULT_ERROR_MESSAGE)
 
     gateway_response = extract_gateway_response(result)
-    print(f'authorize: gateway_response: {gateway_response}')
     error = get_error_for_client(gateway_response["errors"])
     kind = TransactionKind.CAPTURE if config.auto_capture else TransactionKind.AUTH
     return GatewayResponse(
