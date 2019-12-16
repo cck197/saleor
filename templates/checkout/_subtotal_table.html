@@ -1,5 +1,6 @@
 {% load i18n %}
 {% load taxed_prices %}
+{% load countries %}
 
 {% if shipping_required %}
   <div class="table__row">
@@ -28,19 +29,26 @@
       <div class="row">
         <div class="col-7 checkout-preview__total__subtotal deliveryform" data-csrf="{{ csrf_token }}">
           <div class="row">
+            {% if not single_page %}
             <div class="col-12 col-md-4">
               <p>{% trans "Shipping cost for:" context "Checkout shipping cost form" %}</p>
             </div>
             <div class="col-12 col-md-8">
               {{ country_form.country }}
             </div>
+            {% else %}
+              {% get_country country_code as country %}
+              <p>{% trans "Shipping cost for" context "Checkout shipping cost" %} {{ country.name }}:</p>
+            {% endif %}
           </div>
         </div>
         <div class="col-5">
           <div class="row">
             <div class="col-md-12 col-12 text-right">
               <p class="checkout-preview__delivery-info__price">
-                {% if shipping_price_range %}
+                {% if shipping_price_range and single_page %}
+                  {% price shipping_price_range.start %}
+                {% elif shipping_price_range %}
                   {% price_range shipping_price_range %}
                 {% endif %}
               </p>
@@ -55,12 +63,21 @@
   <div class="row">
     <div class="col-8 checkout-preview__total__subtotal">
       <h3>{% trans "Total" context "Order subtotal" %}</h3>
+      {% if not single_page %}
       <small>{% trans "Shipment and taxes calculated at checkout" context "Checkout summary text" %}</small>
+      {% endif %}
     </div>
     <div class="col-4">
       {% spaceless %}
         {% if total_with_shipping %}
-          <h3 class="text-right checkout-total"><span>{% price_range total_with_shipping %}</span>
+          <h3 class="text-right checkout-total">
+            <span>
+              {% if single_page %}
+                {% price total_with_shipping.start %}
+              {% else %}
+                {% price_range total_with_shipping %}
+              {% endif %}
+            </span>
             {% if local_total_with_shipping %}
               <br>
               <small>

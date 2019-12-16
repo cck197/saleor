@@ -147,7 +147,8 @@ class ShippingMethodQueryset(models.QuerySet):
     ):
         if not instance.is_shipping_required():
             return None
-        if not instance.shipping_address:
+        # ZZZ bug here?
+        if country_code is None and not instance.shipping_address:
             return None
 
         return self.applicable_shipping_methods(

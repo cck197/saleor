@@ -119,7 +119,7 @@ def checkout_order_summary(request, checkout):
 
 
 @get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())
-def checkout_index(request, checkout, single_page=False):
+def checkout_index(request, checkout, single_page=False, template=None):
     """Display checkout details."""
     discounts = request.discounts
     checkout_lines = []
@@ -216,13 +216,13 @@ def checkout_index(request, checkout, single_page=False):
         checkout, discounts, country_code=default_country
     )
 
-    context = get_checkout_context(
+    ctx = get_checkout_context(
         checkout,
         discounts,
         currency=request.currency,
         shipping_range=shipping_price_range,
     )
-    context.update(
+    ctx.update(
         {
             "checkout_lines": checkout_lines,
             "country_form": country_form,
@@ -249,27 +249,43 @@ def checkout_index(request, checkout, single_page=False):
         if not order.is_fully_paid():
             response = start_payment(request, token=order.token, gateway="Stripe")
         if not order.is_fully_paid():
-            context.update({"payment": response.context_data})
-        response = checkout_shipping_address(request)
-        context.update({"shipping": response.context_data})
+            ctx.update({"payment": response.context_data})
+        # TODO authenticated single page checkout
+
+        if not order.is_fully_paid():
+            response = start_payment(request, token=order.token, gateway="Braintree")
+        if not order.is_fully_paid():
+            ctx.update({"payment2": response.context_data})
+
+        response = anonymous_user_shipping_address_view(request, checkout)
+        ctx.update({"shipping": response.context_data})
+        # TODO should only call once for single_page
+        shipping_price_range = get_shipping_price_estimate(
+            checkout,
+            discounts,
+            country_code=ctx["shipping"]["address_form"].initial["country"],
+        )
+        ctx['shipping_price_range'] = shipping_price_range
         response = checkout_shipping_method(request)
-        context.update({"shipping_method": response.context_data})
+        ctx.update({"shipping_method": response.context_data})
         checkout.refresh_from_db()
         order.shipping_address = checkout.shipping_address
         order.shipping_method = checkout.shipping_method
         order.save()
         if (
-            context["shipping"]["updated"]
-            and context["shipping_method"]["updated"]
+            ctx["shipping"]["updated"]
+            and ctx["shipping_method"]["updated"]
             and order.is_fully_paid()
         ):
             checkout.delete()
             return redirect("order:payment-success", token=order.token)
-    return TemplateResponse(request, "checkout/index.html", context)
+    breakpoint()
+    template = "checkout/{}".format("index.html" if template is None else template)
+    return TemplateResponse(request, template, ctx)
 
 
 @get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())
-def checkout_shipping_options(request, checkout):
+def checkout_shipping_options(request, checkout, single_page=False):
     """Display shipping options to get a price estimate."""
     country_form = CountryForm(request.POST or None)
     if country_form.is_valid():
@@ -278,7 +294,11 @@ def checkout_shipping_options(request, checkout):
         )
     else:
         shipping_price_range = None
-    ctx = {"shipping_price_range": shipping_price_range, "country_form": country_form}
+    ctx = {
+        "shipping_price_range": shipping_price_range,
+        "country_form": country_form,
+        "single_page": single_page,
+    }
     checkout_data = get_checkout_context(
         checkout,
         request.discounts,
@@ -286,6 +306,7 @@ def checkout_shipping_options(request, checkout):
         shipping_range=shipping_price_range,
     )
     ctx.update(checkout_data)
+    breakpoint()
     return TemplateResponse(request, "checkout/_subtotal_table.html", ctx)
 
 

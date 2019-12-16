@@ -73,6 +73,7 @@ input {
     }
     background-color: $white;
     height: calc(2.25rem + 2px);
+    font-size: 14px;
     &:focus {
       outline: none;
     }

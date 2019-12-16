@@ -110,6 +110,9 @@ def start_payment(request, order, gateway):
         ):
             return redirect(order.get_absolute_url())
 
+        # ZZZ hack to use multiple gateways in one view
+        payment.gateway = gateway
+
         form = payment_gateway.create_payment_form(payment, data=request.POST or None)
         customer_id = fetch_customer_id(request.user, payment.gateway)
         if form.is_valid():
