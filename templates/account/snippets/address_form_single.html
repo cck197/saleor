@@ -5,7 +5,7 @@
     {% if address_form_lines %}
       {% for line in address_form_lines %}
           {% for field in line %}
-            {% if field.name != 'company_name' %}
+            {% if not 'name' in field.name %}
             {% if forloop.first %}
         <div class="row">
             {% endif %}

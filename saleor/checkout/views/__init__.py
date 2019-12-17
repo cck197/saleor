@@ -17,6 +17,7 @@ from ..utils import (
     get_checkout_context,
     get_or_empty_db_checkout,
     get_shipping_price_estimate,
+    get_valid_shipping_methods_for_checkout,
     is_valid_shipping_method,
     prepare_order_data,
     update_checkout_quantity,
@@ -211,6 +212,11 @@ def checkout_index(request, checkout, single_page=False, template=None):
         )
     ctx = {}
     if single_page:
+        # calling the views below as functions invokes a bunch of decorators
+        # that might redirect the request. That's not what we want here for the
+        # single page checkout, so set a flag in the request and check in the
+        # views and decorators.
+        request.redirect = False
         response = anonymous_user_shipping_address_view(request, checkout)
         ctx.update({"shipping": response.context_data})
         country_code = ctx["shipping"]["address_form"].initial["country"]
@@ -221,12 +227,14 @@ def checkout_index(request, checkout, single_page=False, template=None):
         checkout, discounts, country_code=country_code
     )
 
-    ctx.update(get_checkout_context(
-        checkout,
-        discounts,
-        currency=request.currency,
-        shipping_range=shipping_price_range,
-    ))
+    ctx.update(
+        get_checkout_context(
+            checkout,
+            discounts,
+            currency=request.currency,
+            shipping_range=shipping_price_range,
+        )
+    )
     ctx.update(
         {
             "checkout_lines": checkout_lines,
@@ -236,11 +244,6 @@ def checkout_index(request, checkout, single_page=False, template=None):
         }
     )
     if single_page:
-        # calling the views below as functions invokes a bunch of decorators
-        # that might redirect the request. That's not what we want here for the
-        # single page checkout, so set a flag in the request and check in the
-        # views and decorators.
-        request.redirect = False
         order_data = prepare_order_data(
             checkout=checkout,
             tracking_code=analytics.get_client_id(request),
@@ -264,18 +267,21 @@ def checkout_index(request, checkout, single_page=False, template=None):
 
         response = anonymous_user_shipping_address_view(request, checkout)
         ctx.update({"shipping": response.context_data})
-        # TODO should only call once for single_page
-        shipping_price_range = get_shipping_price_estimate(
-            checkout,
-            discounts,
-            country_code=ctx["shipping"]["address_form"].initial["country"],
-        )
-        ctx['shipping_price_range'] = shipping_price_range
+        '''
+        if checkout.shipping_method is None:
+            checkout.shipping_method = get_valid_shipping_methods_for_checkout(
+                checkout, discounts, country_code=country_code
+            ).first()
+            checkout.save()
+        breakpoint()
+        '''
+
         response = checkout_shipping_method(request)
         ctx.update({"shipping_method": response.context_data})
         checkout.refresh_from_db()
         order.shipping_address = checkout.shipping_address
         order.shipping_method = checkout.shipping_method
+        #order.shipping_method_name = checkout.shipping_method.name
         order.save()
         if (
             ctx["shipping"]["updated"]
