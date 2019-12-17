@@ -22,7 +22,6 @@ def anonymous_user_shipping_address_view(request, checkout):
     ctx.update(
         {"address_form": address_form, "user_form": user_form, "updated": updated}
     )
-    breakpoint()
     return TemplateResponse(request, "checkout/shipping_address.html", ctx)
 
 

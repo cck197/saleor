@@ -209,19 +209,24 @@ def checkout_index(request, checkout, single_page=False, template=None):
                 "form": form,
             }
         )
-
-    default_country = get_user_shipping_country(request)
-    country_form = CountryForm(initial={"country": default_country})
+    ctx = {}
+    if single_page:
+        response = anonymous_user_shipping_address_view(request, checkout)
+        ctx.update({"shipping": response.context_data})
+        country_code = ctx["shipping"]["address_form"].initial["country"]
+    else:
+        country_code = get_user_shipping_country(request)
+    country_form = CountryForm(initial={"country": country_code})
     shipping_price_range = get_shipping_price_estimate(
-        checkout, discounts, country_code=default_country
+        checkout, discounts, country_code=country_code
     )
 
-    ctx = get_checkout_context(
+    ctx.update(get_checkout_context(
         checkout,
         discounts,
         currency=request.currency,
         shipping_range=shipping_price_range,
-    )
+    ))
     ctx.update(
         {
             "checkout_lines": checkout_lines,
@@ -279,7 +284,6 @@ def checkout_index(request, checkout, single_page=False, template=None):
         ):
             checkout.delete()
             return redirect("order:payment-success", token=order.token)
-    breakpoint()
     template = "checkout/{}".format("index.html" if template is None else template)
     return TemplateResponse(request, template, ctx)
 
@@ -306,7 +310,6 @@ def checkout_shipping_options(request, checkout, single_page=False):
         shipping_range=shipping_price_range,
     )
     ctx.update(checkout_data)
-    breakpoint()
     return TemplateResponse(request, "checkout/_subtotal_table.html", ctx)
 
 

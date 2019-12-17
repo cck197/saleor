@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load get_product_image_thumbnail from product_images %}
+{% load price from taxed_prices %}
+{% load static %}
+{% load bootstrap_form from bootstrap4 %}
+{% load bootstrap_field from bootstrap4 %}
+{% block shipping_options %}{% url 'checkout:shipping-options-single' %}{% endblock %}
+{% block title %}{% trans "Last Step - Get Your..." context "Checkout page title" %} — {{ block.super }}{% endblock %}
+{% block breadcrumb %}
+  <ul class="breadcrumbs list-unstyled">
+    <li><a href="{% url 'home' %}">{% trans "Home" context "Main navigation item" %}</a></li>
+    <li><a rel="nofollow" href="{% url 'checkout:index' %}">{% trans "Cart" context "Checkout breadcrumb" %}</a></li>
+  </ul>
+{% endblock breadcrumb %}
+
+{% block meta_tags %}
+  <meta name="robots" content="nofollow">
+{% endblock meta_tags %}
+
+{% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-5">
+      <form method="POST" id="payment-form" novalidate>
+        <h2>{% trans "Contact Information" context "Checkout contact information title" %}</h2>
+        {% bootstrap_field shipping.address_form.first_name %}
+        {% bootstrap_field shipping.address_form.last_name %}
+        {% bootstrap_field shipping.user_form.email %}
+        <hr/>
+        <h2>{% trans "Shipping Information" context "Checkout shipping information title" %}</h2>
+        {% include "account/snippets/address_form_single.html" with address_form=shipping.address_form only %}
+        <hr/>
+
+        <h2>{% trans "Payment Information" context "Checkout payment information title" %}</h2>
+				<ul class="nav nav-tabs col-lg-10 m-auto" role="tablist">
+					<li class="nav-item">
+						<a class="nav-link active" data-toggle="tab" href="#card" role="tab" aria-selected="true">
+							<h3>Credit Card</h3>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" data-toggle="tab" href="#paypal" role="tab" aria-selected="false">
+							<h3>PayPal</h3>
+						</a>
+					</li>
+				</ul>
+				<div class="tab-content">
+					<div class="tab-pane fade active show" id="card" role="tabpanel">
+						<div class="m-auto">
+              {% if payment %}
+              {% include 'order/payment/stripe_inner.html' with form=payment.form payment=payment.payment client_token=payment.client_token order=order %}
+              {% else %}
+              <button type="submit" id="card-button" class="btn btn-primary btn-block">
+                {% trans "Place Order" context "Payment form primary action" %}
+              </button>
+              {% endif %}
+						</div>
+					</div>
+					<div class="tab-pane fade" id="paypal" role="tabpanel">
+						<div class="m-auto">
+							<div class="alert alert-danger">
+								<span contenteditable="true">An approval dialog box will appear for secure PayPal payment</span>
+							</div>
+              {% if payment2 %}
+              {% include 'order/payment/paypal.html' with form=payment2.form payment2=payment.payment client_token=payment2.client_token order=payment2.order %}
+              {% endif %}
+						</div>
+					</div>
+				</div>
+      </form>
+    </div>
+    <div class="col-7">
+      <h2>{% trans "Order Summary" context "Checkout order summary title" %}</h2>
+      <div class="checkout-preview">
+        {% if checkout_lines %}
+          <div class="table__header d-none d-md-block">
+            <div class="row">
+              <div class="col-md-7">
+                <small>{% trans "Product" context "Checkout table header" %}</small>
+              </div>
+              <div class="col-md-3">
+                <small>{% trans "Quantity" context "Checkout table header" %}</small>
+              </div>
+              <div class="col-md-2 text-right">
+                <small>{% trans "Price" context "Checkout table header" %}</small>
+              </div>
+            </div>
+          </div>
+          {% for line in checkout_lines %}
+            <div class="checkout-preview__line{% if forloop.last %} last{% endif %} table__row">
+              <div class="row">
+                <div class="col-7 checkout-preview__line__product">
+                  <a class="link--clean" href="{{ line.variant.get_absolute_url }}">
+                    <img class="lazyload lazypreload" data-src="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=60 %}"
+                         data-srcset="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=60 %} 1x, {% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=120 %} 2x"
+                         alt="">
+                    <p>{{ line.variant.product.translated }}<br><small>{{ line.variant.translated }}</small></p>
+                  </a>
+                </div>
+                <div class="col-5">
+                  <div class="row">
+                    <div class="checkout-preview__line__quantity col-md-7 col-12">
+                      <form role="form" action="{% url "checkout:update-line" variant_id=line.variant.pk %}" method="post" class="form-checkout">
+                        <div class="{% if form.quantity.errors %} has-error{% endif %}" tabindex="-1">
+                          {{ line.form.quantity }}
+                        </div>
+                        {% csrf_token %}
+                      </form>
+                      <span class="checkout-preview-item-delete">
+                        <svg data-src="{% static "images/delete.svg" %}" height="20px" width="20px" />
+                      </span>
+                      <small class="checkout-preview__line__quantity-error text-danger"></small>
+                    </div>
+                    <div class="checkout-preview-item-price col-md-5 col-12" data-product-id="{{ line.variant.pk }}">
+                      <p class="text-right">
+                        {% price line.get_total %}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+          <div class="checkout__subtotal">
+            {% include 'checkout/_subtotal_table.html' with country_code=shipping.address_form.initial.country %}
+          </div>
+        {% endif %}
+      </div>
+      <p class="text-center"><small class="text-muted">60 Day Money Back Guarantee</small></p>
+      <p class="text-center"><small class="text-muted">100% No Questions Asked</small></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+<form method="POST" id="payment-form" class="form-horizontal"{% if form.action %} action="{{ form.action }}"{% endif %} novalidate>
+  {% csrf_token %}
+  <div id="paypal-button"></div>
+</form>
+
+<!-- Load PayPal's checkout.js Library. -->
+<script src="https://www.paypalobjects.com/api/checkout.js" data-version-4 log-level="warn"></script>
+
+<!-- Load the client component. -->
+<script src="https://js.braintreegateway.com/web/3.56.0/js/client.min.js"></script>
+
+<!-- Load the PayPal Checkout component. -->
+<script src="https://js.braintreegateway.com/web/3.56.0/js/paypal-checkout.min.js"></script>
+
+<script>
+// Create a client.
+var client_token = '{{ client_token }}';
+braintree.client.create({
+  authorization: client_token
+}, function (clientErr, clientInstance) {
+
+  // Stop if there was a problem creating the client.
+  // This could happen if there is a network error or if the authorization
+  // is invalid.
+  if (clientErr) {
+    console.error('Error creating client:', clientErr);
+    return;
+  }
+
+  // Create a PayPal Checkout component.
+  braintree.paypalCheckout.create({
+    client: clientInstance
+  }, function (paypalCheckoutErr, paypalCheckoutInstance) {
+
+    // Stop if there was a problem creating PayPal Checkout.
+    // This could happen if there was a network error or if it's incorrectly
+    // configured.
+    if (paypalCheckoutErr) {
+      console.error('Error creating PayPal Checkout:', paypalCheckoutErr);
+      return;
+    }
+
+    // Set up PayPal with the checkout.js library
+    // https://developer.paypal.com/docs/archive/checkout/how-to/customize-button/#button-styles
+    paypal.Button.render({
+      env: 'sandbox', // or 'production'
+      style: {
+        size: 'responsive',
+        shape: 'rect',
+      },
+
+      payment: function () {
+        return paypalCheckoutInstance.createPayment({
+          // Your PayPal options here. For available options, see
+          // http://braintree.github.io/braintree-web/current/PayPalCheckout.html#createPayment
+          flow: 'vault',
+          amount: '{{ order.total_gross.amount }}',
+          currency: '{{ order.currency }}',
+        });
+      },
+
+      onAuthorize: function (data, actions) {
+        return paypalCheckoutInstance.tokenizePayment(data, function (err, payload) {
+          // Submit `payload.nonce` to your server.
+          document.querySelector('#nonce').value = payload.nonce;
+          form.submit();
+        });
+      },
+
+      onCancel: function (data) {
+        console.log('checkout.js payment cancelled', JSON.stringify(data, 0, 2));
+      },
+
+      onError: function (err) {
+        console.error('checkout.js error', err);
+      }
+    }, '#paypal-button').then(function () {
+      // The PayPal button will be rendered in an html element with the id
+      // `paypal-button`. This function will be called when the PayPal button
+      // is set up and ready to be used.
+    });
+
+  });
+
+});
+</script>
