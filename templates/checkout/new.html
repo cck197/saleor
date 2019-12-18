@@ -23,6 +23,7 @@
   <div class="row">
     <div class="col-5">
       <form method="POST" id="payment-form" novalidate>
+        <input type="hidden" id="gateway" name="gateway" value="Stripe"/>
         <h2>{% trans "Contact Information" context "Checkout contact information title" %}</h2>
         {% csrf_token %}
         {% bootstrap_field shipping.address_form.first_name %}
@@ -32,7 +33,7 @@
         <h2>{% trans "Shipping Information" context "Checkout shipping information title" %}</h2>
         {% include "account/snippets/address_form_single.html" with address_form=shipping.address_form only %}
 
-        {% if not payment %}
+        {% if not Stripe and not Braintree  %}
         <button type="submit" id="card-button" class="btn btn-primary btn-block">
           {% trans "Place Order" context "Payment form primary action" %}
         </button>
@@ -40,33 +41,39 @@
         <hr/>
         <h2>{% trans "Payment Information" context "Checkout payment information title" %}</h2>
 				<ul class="nav nav-tabs col-lg-10 m-auto" role="tablist">
+          {% if Stripe %}
 					<li class="nav-item">
 						<a class="nav-link active" data-toggle="tab" href="#card" role="tab" aria-selected="true">
 							<h3>Credit Card</h3>
 						</a>
 					</li>
+          {% endif %}
+          {% if Braintree %}
 					<li class="nav-item">
 						<a class="nav-link" data-toggle="tab" href="#paypal" role="tab" aria-selected="false">
 							<h3>PayPal</h3>
 						</a>
 					</li>
+          {% endif %}
 				</ul>
 				<div class="tab-content">
+          {% if Stripe %}
 					<div class="tab-pane fade active show" id="card" role="tabpanel">
 						<div class="m-auto">
-              {% include 'order/payment/stripe_inner.html' with form=payment.form payment=payment.payment client_token=payment.client_token order=order %}
+              {% include 'order/payment/stripe_inner.html' with form=Stripe.form payment=Stripe.payment client_token=Stripe.client_token order=order %}
 						</div>
 					</div>
+          {% endif %}
+          {% if Braintree %}
 					<div class="tab-pane fade" id="paypal" role="tabpanel">
 						<div class="m-auto">
 							<div class="alert alert-danger">
 								<span contenteditable="true">An approval dialog box will appear for secure PayPal payment</span>
 							</div>
-              {% if payment2 %}
-              {% include 'order/payment/paypal.html' with form=payment2.form payment2=payment.payment client_token=payment2.client_token order=payment2.order %}
-              {% endif %}
+              {% include 'order/payment/paypal.html' with form=Braintree.form payment=Braintree.payment client_token=Braintree.client_token order=order %}
 						</div>
 					</div>
+          {% endif %}
 				</div>
         {% endif %}
       </form>

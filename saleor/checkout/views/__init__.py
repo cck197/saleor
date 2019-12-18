@@ -275,16 +275,17 @@ def checkout_index(request, checkout, single_page=False, template=None):
         update_order_prices(order, discounts)
         order.save()
 
-        # TODO configure default gateway?
-        if not order.is_fully_paid():
-            response = start_payment(request, token=order.token, gateway="Stripe")
-        if not order.is_fully_paid():
-            ctx.update({"payment": response.context_data})
 
-        if not order.is_fully_paid():
-            response = start_payment(request, token=order.token, gateway="Braintree")
-        if not order.is_fully_paid():
-            ctx.update({"payment2": response.context_data})
+        if request.method == 'POST':
+            gateway = request.POST['gateway']
+            if not order.is_fully_paid():
+                response = start_payment(request, token=order.token, gateway=gateway)
+            if not order.is_fully_paid():
+                ctx[gateway] = response.context_data
+        else:
+            for gateway in ["Stripe", "Braintree"]: # TODO config
+                response = start_payment(request, token=order.token, gateway=gateway)
+                ctx[gateway] = response.context_data
 
         if (
             ctx["shipping"]["updated"]
@@ -294,7 +295,6 @@ def checkout_index(request, checkout, single_page=False, template=None):
             checkout.delete()
             return redirect("order:payment-success", token=order.token)
     template = "checkout/{}".format("index.html" if template is None else template)
-    #breakpoint()
     return TemplateResponse(request, template, ctx)
 
 

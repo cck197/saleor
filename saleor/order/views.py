@@ -91,6 +91,7 @@ def payment(request, token):
 
 @check_order_status
 def start_payment(request, order, gateway):
+    print(f'start_payment: gateway: {gateway}')
     extra_data = {"customer_user_agent": request.META.get("HTTP_USER_AGENT")}
     with transaction.atomic():
         payment = create_payment(
@@ -112,6 +113,7 @@ def start_payment(request, order, gateway):
 
         # ZZZ hack to use multiple gateways in one view
         payment.gateway = gateway
+        payment.save()
 
         form = payment_gateway.create_payment_form(payment, data=request.POST or None)
         customer_id = fetch_customer_id(request.user, payment.gateway)
