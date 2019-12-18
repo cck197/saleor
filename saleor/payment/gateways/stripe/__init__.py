@@ -56,6 +56,14 @@ def authorize(
     )
 
     try:
+        should_attach = False
+        if config.store_customer and customer_id:
+            # make sure the payment method is attached to the customer
+            payment_method = stripe.PaymentMethod.retrieve(
+                  payment_information.token
+            )
+            should_attach = payment_method.customer != customer_id
+
         intent = client.PaymentIntent.create(
             payment_method=payment_information.token,
             amount=stripe_amount,
@@ -67,12 +75,21 @@ def authorize(
             customer=customer_id,
             shipping=shipping,
         )
-        if config.store_customer and not customer_id:
-            customer = client.Customer.create(
-                payment_method=intent.payment_method,
-                email=payment_information.customer_email,
-            )
-            customer_id = customer.id
+        if config.store_customer:
+            if not customer_id:
+                # create new customer and attach payment method for reuse later
+                customer = client.Customer.create(
+                    payment_method=intent.payment_method,
+                    email=payment_information.customer_email,
+                )
+                customer_id = customer.id
+            if should_attach:
+                # this is a new payment method, attach it to the customer so we
+                # can use it again.
+                payment_method = stripe.PaymentMethod.attach(
+                  intent.payment_method,
+                  customer=customer_id,
+                )
 
     except stripe.error.StripeError as exc:
         response = _error_response(kind=kind, exc=exc, payment_info=payment_information)
