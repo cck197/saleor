@@ -26,6 +26,7 @@ from ..utils import (
 )
 from ...order.models import Order
 from ...order.views import start_payment
+from ...order.utils import update_order_prices
 from .discount import add_voucher_form, validate_voucher
 from .shipping import anonymous_user_shipping_address_view, user_shipping_address_view
 from .summary import (
@@ -244,6 +245,19 @@ def checkout_index(request, checkout, single_page=False, template=None):
         }
     )
     if single_page:
+        response = anonymous_user_shipping_address_view(request, checkout)
+        ctx.update({"shipping": response.context_data})
+        checkout.refresh_from_db()
+        #response = checkout_shipping_method(request)
+        #ctx.update({"shipping_method": response.context_data})
+
+        # skip the shipping method form and choose the cheapest
+        if checkout.shipping_method is None:
+            checkout.shipping_method = get_valid_shipping_methods_for_checkout(
+                checkout, discounts, country_code=country_code
+            ).first()
+            checkout.save()
+
         order_data = prepare_order_data(
             checkout=checkout,
             tracking_code=analytics.get_client_id(request),
@@ -253,44 +267,34 @@ def checkout_index(request, checkout, single_page=False, template=None):
             checkout=checkout, order_data=order_data, user=request.user
         )
         copy_funnel_meta(checkout, order)
+
+        order.shipping_address = checkout.shipping_address
+        if checkout.shipping_method:
+            order.shipping_method = checkout.shipping_method
+            order.shipping_method_name = checkout.shipping_method.name
+        update_order_prices(order, discounts)
+        order.save()
+
         # TODO configure default gateway?
         if not order.is_fully_paid():
             response = start_payment(request, token=order.token, gateway="Stripe")
         if not order.is_fully_paid():
             ctx.update({"payment": response.context_data})
-        # TODO authenticated single page checkout
 
         if not order.is_fully_paid():
             response = start_payment(request, token=order.token, gateway="Braintree")
         if not order.is_fully_paid():
             ctx.update({"payment2": response.context_data})
 
-        response = anonymous_user_shipping_address_view(request, checkout)
-        ctx.update({"shipping": response.context_data})
-        '''
-        if checkout.shipping_method is None:
-            checkout.shipping_method = get_valid_shipping_methods_for_checkout(
-                checkout, discounts, country_code=country_code
-            ).first()
-            checkout.save()
-        breakpoint()
-        '''
-
-        response = checkout_shipping_method(request)
-        ctx.update({"shipping_method": response.context_data})
-        checkout.refresh_from_db()
-        order.shipping_address = checkout.shipping_address
-        order.shipping_method = checkout.shipping_method
-        #order.shipping_method_name = checkout.shipping_method.name
-        order.save()
         if (
             ctx["shipping"]["updated"]
-            and ctx["shipping_method"]["updated"]
+            #and ctx["shipping_method"]["updated"]
             and order.is_fully_paid()
         ):
             checkout.delete()
             return redirect("order:payment-success", token=order.token)
     template = "checkout/{}".format("index.html" if template is None else template)
+    #breakpoint()
     return TemplateResponse(request, template, ctx)
 
 

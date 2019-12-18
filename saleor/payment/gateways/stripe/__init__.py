@@ -24,16 +24,15 @@ from .forms import StripePaymentForm
 
 logger = logging.getLogger(__name__)
 
+
 def create_form(data, payment_information):
-    return StripePaymentForm(
-        data=data, payment_information=payment_information
-    )
+    return StripePaymentForm(data=data, payment_information=payment_information)
 
 
 def get_client_token(
     config: GatewayConfig, token_config: Optional[TokenConfig] = None
 ) -> str:
-    return config.connection_params['public_key']
+    return config.connection_params["public_key"]
 
 
 def authorize(
@@ -45,9 +44,11 @@ def authorize(
     currency = get_currency_for_stripe(payment_information.currency)
     stripe_amount = get_amount_for_stripe(payment_information.amount, currency)
     future_use = "off_session" if config.store_customer else "on_session"
-    customer_id = payment_information.customer_id if payment_information.reuse_source else None
-    print(f'{payment_information.__dict__}')
-    print(f'authorize: customer_id: {customer_id}')
+    customer_id = (
+        payment_information.customer_id if payment_information.reuse_source else None
+    )
+    print(f"{payment_information.__dict__}")
+    print(f"authorize: customer_id: {customer_id}")
     shipping = (
         shipping_to_stripe_dict(payment_information.shipping)
         if payment_information.shipping
@@ -67,7 +68,10 @@ def authorize(
             shipping=shipping,
         )
         if config.store_customer and not customer_id:
-            customer = client.Customer.create(payment_method=intent.payment_method)
+            customer = client.Customer.create(
+                payment_method=intent.payment_method,
+                email=payment_information.customer_email,
+            )
             customer_id = customer.id
 
     except stripe.error.StripeError as exc:

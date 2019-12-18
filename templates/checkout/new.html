@@ -38,29 +38,6 @@
         </button>
         {% else %}
         <hr/>
-        <div class="checkout__shipping-methods">
-          {% if shipping_method.shipping_method_form.shipping_method.field.choices %}
-            <h2>
-              {% trans "Shipping method" context "Checkout shipping method form title" %}
-            </h2>
-            <div class="checkout__shipping-methods-form">
-              {% for choice in shipping_method.shipping_method_form.shipping_method %}
-                <div class="radio">
-                  <label>
-                    <div class="card card-default">
-                      <div class="card-body">
-                        <strong>
-                          {{choice}}
-                        </strong>
-                      </div>
-                    </div>
-                  </label>
-                </div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        </div>
-        <hr/>
         <h2>{% trans "Payment Information" context "Checkout payment information title" %}</h2>
 				<ul class="nav nav-tabs col-lg-10 m-auto" role="tablist">
 					<li class="nav-item">
