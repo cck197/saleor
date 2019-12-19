@@ -219,7 +219,7 @@ def checkout_index(request, checkout, single_page=False, template=None):
         # views and decorators.
         request.redirect = False
         response = anonymous_user_shipping_address_view(request, checkout)
-        ctx.update({"shipping": response.context_data})
+        ctx.update({"shipping": response.context_data, "cheesy_clock": True})
         country_code = ctx["shipping"]["address_form"].initial["country"]
     else:
         country_code = get_user_shipping_country(request)
