@@ -154,16 +154,8 @@ def digital_product(request, token: str) -> Union[FileResponse, HttpResponseNotF
     return response
 
 
-def funnel_add_to_checkout(
-    request, funnel_slug, slug, product_id, funnel_index, token=None
-):
-    return product_add_to_checkout(
-        request, slug, product_id, funnel_slug=funnel_slug,
-        funnel_index=funnel_index, token=token
-    )
-
 def product_add_to_checkout(
-    request, slug, product_id, funnel_slug=None, funnel_index=None, token=None
+    request, slug, product_id,
 ):
     # types: (int, str, dict) -> None
 
@@ -186,17 +178,6 @@ def product_add_to_checkout(
     if form.is_valid():
         form.save()
         next_url = reverse("checkout:index")
-        if funnel_slug is not None:
-            meta = form.checkout.get_meta('funnel', 'funnel')
-            meta.update({
-                'slug': funnel_slug,
-                'funnel_index': int(funnel_index) + 1,
-                'token': token,
-            })
-            next_url = meta.get('next', next_url)
-            # Tag the checkout to identify it as a funnel so we can do the upsell later.
-            form.checkout.store_meta('funnel', 'funnel', meta)
-            form.checkout.save()
         if request.is_ajax():
             response = JsonResponse({"next": next_url}, status=200)
         else:
@@ -256,19 +237,16 @@ def collection_index(request, slug, pk):
     ctx.update({"object": collection})
     return TemplateResponse(request, "collection/index.html", ctx)
 
-def funnel_decline(request, token):
-    order = get_object_or_404(Order, token=token)
-    meta = order.get_meta('funnel', 'funnel')
-    funnel_index = meta['funnel_index']
-    meta.update({
-        'funnel_index': int(funnel_index) + 1,
-    })
-    order.store_meta('funnel', 'funnel', meta)
-    order.save()
-    return redirect(meta['next'])
+
+def funnel_decline(request):
+    token = request.session["token"]
+    funnel_index = request.session["funnel_index"]
+    request.session["funnel_index"] = funnel_index + 1
+    return redirect("order:payment-success", token=token)
 
 
-def funnel_index(request, slug, pk, aslug, funnel_index=0, token=None):
+def funnel_index(request, slug, pk, aslug):
+    funnel_index = request.session.get("funnel_index", 0)
     collections = collections_visible_to_user(request.user).prefetch_related(
         "translations"
     )
@@ -283,6 +261,8 @@ def funnel_index(request, slug, pk, aslug, funnel_index=0, token=None):
         )[int(funnel_index)]
     except KeyError:
         raise Http404("Collection doesn't exist")
+    request.session["funnel_index"] = funnel_index
+    request.session["funnel_slug"] = collection.slug
     today = datetime.date.today()
     is_visible = product.publication_date is None or product.publication_date <= today
     checkout = get_checkout_from_request(request)
@@ -318,12 +298,9 @@ def funnel_index(request, slug, pk, aslug, funnel_index=0, token=None):
         "description_json": product.translated.description_json,
         "description_html": product.translated.description,
         "is_visible": is_visible,
-        'funnel_slug': collection.slug,
-        'funnel_index': funnel_index,
         "form": form,
         "availability": availability,
         "product": product,
-        "token": token,
         "product_images": product_images,
         "show_variant_picker": show_variant_picker,
         "variant_picker_data": json.dumps(

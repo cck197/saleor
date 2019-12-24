@@ -58,6 +58,11 @@ from ..order.utils import add_gift_card_to_order
 
 COOKIE_NAME = "checkout"
 
+def clear_funnel_session(request):
+    for key in ("funnel_index", "funnel_slug", "token"):
+        if key in request.session:
+            del request.session[key]
+
 
 def set_checkout_cookie(simple_checkout, response):
     """Update response with a checkout token cookie."""
@@ -87,14 +92,6 @@ def token_is_valid(token):
     except ValueError:
         return False
     return True
-
-
-def copy_funnel_meta(checkout, order):
-    meta = checkout.get_meta('funnel', 'funnel')
-    meta_ = order.get_meta('funnel', 'funnel')
-    meta_.update(meta)
-    order.store_meta('funnel', 'funnel', meta)
-    order.save()
 
 
 def remove_unavailable_variants(checkout):

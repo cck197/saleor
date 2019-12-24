@@ -11,7 +11,7 @@ from ..forms import CheckoutShippingMethodForm, CountryForm, ReplaceCheckoutLine
 from ..models import Checkout
 from ...product.models import Collection
 from ..utils import (
-    copy_funnel_meta,
+    clear_funnel_session,
     create_order,
     check_product_availability_and_warn,
     get_checkout_context,
@@ -135,52 +135,44 @@ def checkout_index(request, checkout, single_page=False, template=None):
     except Checkout.DoesNotExist:
         pass
 
-    meta = checkout.get_meta("funnel", "funnel")
-    if meta:
-        funnel_index = meta["funnel_index"]
-        token = meta.get("token")
-        if token:
-            order = get_object_or_404(Order, token=token)
-            upsell_order(order, checkout, analytics.get_client_id(request))
-            payment = order.payments.first()
-            payment_ = create_payment(
-                gateway=payment.gateway,
-                currency=order.total.gross.currency,
-                email=order.user_email,
-                billing_address=order.billing_address,
-                customer_ip_address=payment.customer_ip_address,
-                total=abs(order.total_balance.amount),
-                order=order,
-                extra_data=meta,
+    funnel_index = request.session.get("funnel_index")
+    if funnel_index > 0: # we've already collected payment info
+        token = request.session["token"]
+        order = get_object_or_404(Order, token=token)
+        upsell_order(order, checkout, analytics.get_client_id(request))
+        payment = order.payments.first()
+        payment_ = create_payment(
+            gateway=payment.gateway,
+            currency=order.total.gross.currency,
+            email=order.user_email,
+            billing_address=order.billing_address,
+            customer_ip_address=payment.customer_ip_address,
+            total=abs(order.total_balance.amount),
+            order=order,
+        )
+        tx = payment.transactions.first()
+        token = tx.gateway_response.get("payment_method", "")
+        customer_id = tx.customer_id
+        process_payment(
+            payment_,
+            token,
+            store_source=True,
+            customer_id=customer_id,
+            order_id="{}_{}".format(order.id, funnel_index),
+        )
+        funnel_index = funnel_index + 1
+        request.session["funnel_index"] = funnel_index
+        funnel = get_object_or_404(Collection, slug=request.session["funnel_slug"])
+        order.save()
+        checkout.delete()
+        if funnel.products.count() > funnel_index:
+            return redirect(
+                "product:funnel",
+                slug=funnel.slug,
+                pk=funnel.id,
             )
-            tx = payment.transactions.first()
-            token = tx.gateway_response.get("payment_method", "")
-            customer_id = tx.customer_id
-            process_payment(
-                payment_,
-                token,
-                store_source=True,
-                customer_id=customer_id,
-                order_id="{}_{}".format(order.id, funnel_index),
-            )
-            funnel_index = funnel_index + 1
-            meta_ = order.get_meta("funnel", "funnel")
-            meta_.update(meta)
-            meta_["funnel_index"] = funnel_index
-            funnel = get_object_or_404(Collection, slug=meta["slug"])
-            order.store_meta("funnel", "funnel", meta_)
-            order.save()
-            checkout.delete()
-            if funnel_index > funnel.products.count():
-                return redirect(meta_["next"])
-            else:
-                return redirect(
-                    "product:funnel",
-                    slug=funnel.slug,
-                    pk=funnel.id,
-                    funnel_index=funnel_index,
-                    token=order.token,
-                )
+        else:
+            return redirect("order:payment-success", token=order.token)
 
     lines = checkout.lines.select_related("variant__product__product_type")
     lines = lines.prefetch_related(
@@ -266,7 +258,7 @@ def checkout_index(request, checkout, single_page=False, template=None):
         order = create_order(
             checkout=checkout, order_data=order_data, user=request.user
         )
-        copy_funnel_meta(checkout, order)
+        request.session["token"] = order.token
 
         order.shipping_address = checkout.shipping_address
         if checkout.shipping_method:
@@ -286,13 +278,13 @@ def checkout_index(request, checkout, single_page=False, template=None):
             for gateway in ["Stripe", "Braintree"]: # TODO config
                 response = start_payment(request, token=order.token, gateway=gateway)
                 ctx[gateway] = response.context_data
-
         if (
             ctx["shipping"]["updated"]
             #and ctx["shipping_method"]["updated"]
             and order.is_fully_paid()
         ):
             checkout.delete()
+            request.session["funnel_index"] = funnel_index + 1
             return redirect("order:payment-success", token=order.token)
     template = "checkout/{}".format("index.html" if template is None else template)
     return TemplateResponse(request, template, ctx)
@@ -372,12 +364,16 @@ def update_checkout_line(request, checkout, variant_id):
 @get_or_empty_db_checkout()
 def clear_checkout(request, checkout):
     """Clear checkout."""
-    if not request.is_ajax():
-        return redirect("checkout:index")
-    checkout.lines.all().delete()
-    update_checkout_quantity(checkout)
-    response = {"numItems": 0}
-    return JsonResponse(response)
+    if len(checkout):
+        checkout.lines.all().delete()
+        update_checkout_quantity(checkout)
+    clear_funnel_session(request)
+
+    if request.is_ajax():
+        response = {"numItems": 0}
+        return JsonResponse(response)
+    else:
+        return redirect("/") # TODO
 
 
 @get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())

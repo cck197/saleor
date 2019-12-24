@@ -21,7 +21,7 @@ from .models import Order
 from ..product.models import Collection
 from .utils import attach_order_to_user, check_order_status
 
-from ..checkout.utils import should_redirect
+from ..checkout.utils import clear_funnel_session, should_redirect
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +91,6 @@ def payment(request, token):
 
 @check_order_status
 def start_payment(request, order, gateway):
-    print(f'start_payment: gateway: {gateway}')
     extra_data = {"customer_user_agent": request.META.get("HTTP_USER_AGENT")}
     with transaction.atomic():
         payment = create_payment(
@@ -176,22 +175,19 @@ def checkout_success(request, token):
     """
     order = get_object_or_404(Order, token=token)
 
-    meta = order.get_meta("funnel", "funnel")
+    funnel_slug = request.session.get("funnel_slug")
     # Check for funnel and remaining upsells
-    if meta:
-        funnel = get_object_or_404(Collection, slug=meta["slug"])
-        funnel_index = meta["funnel_index"]
+    if funnel_slug:
+        funnel = get_object_or_404(Collection, slug=funnel_slug)
+        funnel_index = request.session["funnel_index"]
         if funnel.products.count() > funnel_index:
-            meta["next"] = request.path
-            order.store_meta("funnel", "funnel", meta)
-            order.save()
             return redirect(
                 "product:funnel",
                 slug=funnel.slug,
                 pk=funnel.id,
-                funnel_index=funnel_index,
-                token=order.token,
             )
+        else:
+            clear_funnel_session(request)
     email = order.user_email
     ctx = {"email": email, "order": order}
     if request.user.is_authenticated:

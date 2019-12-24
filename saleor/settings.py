@@ -19,6 +19,7 @@ env = environ.Env(
 # reading .env file
 environ.Env.read_env()
 
+
 # False if not in os.environ
 DEBUG = env('DEBUG', default=False)
 

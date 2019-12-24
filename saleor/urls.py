@@ -48,7 +48,6 @@ translatable_urlpatterns = [
 ]
 
 urlpatterns = non_translatable_urlpatterns + i18n_patterns(*translatable_urlpatterns)
-
 if settings.DEBUG:
     try:
         import debug_toolbar
