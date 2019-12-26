@@ -17,6 +17,7 @@ from django.urls import reverse
 from draftjs_sanitizer import SafeJSONEncoder
 
 from ..checkout.utils import (
+    add_variant_to_checkout,
     get_checkout_from_request,
     get_or_create_checkout_from_request,
     set_checkout_cookie,
@@ -25,7 +26,7 @@ from ..core.utils import serialize_decimal
 from ..seo.schema.product import product_json_ld
 from .filters import ProductCategoryFilter, ProductCollectionFilter
 from .forms import ProductForm
-from .models import Category, DigitalContentUrl
+from .models import Category, Collection, DigitalContentUrl, ProductVariant
 from .utils import (
     collections_visible_to_user,
     get_product_images,
@@ -154,9 +155,16 @@ def digital_product(request, token: str) -> Union[FileResponse, HttpResponseNotF
     return response
 
 
-def product_add_to_checkout(
-    request, slug, product_id,
-):
+def variant_add_to_checkout(request, slug, variant_id, quantity=1):
+    collection = get_object_or_404(Collection, slug=slug)
+    request.session["funnel_slug"] = slug
+    variant = get_object_or_404(ProductVariant, pk=variant_id)
+    checkout = get_or_create_checkout_from_request(request)
+    add_variant_to_checkout(checkout, variant, quantity)
+    return redirect(reverse("checkout:index"))
+
+
+def product_add_to_checkout(request, slug, product_id):
     # types: (int, str, dict) -> None
 
     if not request.method == "POST":

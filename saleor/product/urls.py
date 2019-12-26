@@ -40,4 +40,9 @@ urlpatterns = [
         name="funnel",
         kwargs={'aslug': 'funnel_order'},
     ),
+    url(
+        r"^funnel/(?P<slug>[a-z0-9-_]+?)/(?P<variant_id>[0-9]+)/add/$",
+        views.variant_add_to_checkout,
+        name="variant-add-to-checkout",
+    ),
 ]
