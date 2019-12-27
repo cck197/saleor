@@ -349,6 +349,15 @@ class Product(SeoModel, ModelWithMetadata, PublishableModel):
         price = calculate_discounted_price(self, self.price, discounts)
         return MoneyRange(start=price, stop=price)
 
+    def get_first_attr_value(self, slug):
+        vals = [
+            a.values.first().name
+            for a in self.attributes.all()
+            if a.attribute.slug == slug
+        ]
+        if vals:
+            return vals[0]
+
 
 class ProductTranslation(SeoModelTranslation):
     language_code = models.CharField(max_length=10)

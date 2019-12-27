@@ -271,6 +271,9 @@ def funnel_index(request, slug, pk, aslug):
         raise Http404("Collection doesn't exist")
     request.session["funnel_index"] = funnel_index
     request.session["funnel_slug"] = collection.slug
+    external_url = product.get_first_attr_value("external_url")
+    if external_url is not None:
+        print(f"funnel_index: redirecting to {external_url}")
     today = datetime.date.today()
     is_visible = product.publication_date is None or product.publication_date <= today
     checkout = get_checkout_from_request(request)
