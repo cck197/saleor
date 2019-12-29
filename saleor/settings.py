@@ -12,6 +12,7 @@ from django_prices.utils.formatting import get_currency_fraction
 from sentry_sdk.integrations.django import DjangoIntegration
 
 import environ
+
 env = environ.Env(
     # set casting, default value
     DEBUG=(bool, False)
@@ -21,10 +22,12 @@ environ.Env.read_env()
 
 
 # False if not in os.environ
-DEBUG = env('DEBUG', default=False)
+DEBUG = env("DEBUG", default=False)
+
 
 def get_list(text):
     return [item.strip() for item in text.split(",")]
+
 
 SITE_ID = 1
 
@@ -198,7 +201,7 @@ TEMPLATES = [
 ]
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = env('SECRET_KEY')
+SECRET_KEY = env("SECRET_KEY")
 
 MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -262,7 +265,7 @@ INSTALLED_APPS = [
     "django_prices",
     "django_prices_openexchangerates",
     "django_prices_vatlayer",
-    'django_extensions',
+    "django_extensions",
     "graphene_django",
     "mptt",
     "webpack_loader",
@@ -306,10 +309,12 @@ if ENABLE_SILK:
     MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
     INSTALLED_APPS.append("silk")
 
+
 def skip_static_requests(record):
-    if record.args[0].startswith('GET /static/'):  # filter whatever you want
+    if record.args[0].startswith("GET /static/"):  # filter whatever you want
         return False
     return True
+
 
 LOGGING = {
     "version": 1,
@@ -321,12 +326,15 @@ LOGGING = {
                 "%(levelname)s %(name)s %(message)s [PID:%(process)d:%(threadName)s]"
             )
         },
-        #"simple": {"format": "%(levelname)s %(message)s"},
+        # "simple": {"format": "%(levelname)s %(message)s"},
     },
-    "filters": {"require_debug_false": {"()": "django.utils.log.RequireDebugFalse"}, 'skip_static_requests': {
-            '()': 'django.utils.log.CallbackFilter',
-            'callback': skip_static_requests
-        }},
+    "filters": {
+        "require_debug_false": {"()": "django.utils.log.RequireDebugFalse"},
+        "skip_static_requests": {
+            "()": "django.utils.log.CallbackFilter",
+            "callback": skip_static_requests,
+        },
+    },
     "handlers": {
         "mail_admins": {
             "level": "ERROR",
@@ -345,8 +353,8 @@ LOGGING = {
             "level": "ERROR",
             "propagate": True,
         },
-        #"django.server": {"handlers": ["console"], "level": "INFO", "propagate": True},
-        #"saleor": {"handlers": ["console"], "level": "DEBUG", "propagate": True},
+        # "django.server": {"handlers": ["console"], "level": "INFO", "propagate": True},
+        # "saleor": {"handlers": ["console"], "level": "DEBUG", "propagate": True},
     },
 }
 
@@ -438,7 +446,10 @@ bootstrap4 = {
 
 TEST_RUNNER = "tests.runner.PytestTestRunner"
 
-ALLOWED_HOSTS = get_list(env("ALLOWED_HOSTS", default="localhost,127.0.0.1"))
+ALLOWED_HOSTS = env.list(
+    "DJANGO_ALLOWED_HOSTS",
+    default=[env("RENDER_EXTERNAL_HOSTNAME", default="localhost,127.0.0.1")],
+)
 ALLOWED_GRAPHQL_ORIGINS = env("ALLOWED_GRAPHQL_ORIGINS", default="*")
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
