@@ -128,3 +128,4 @@ weasyprint==50
 webencodings==0.5.1
 zipp==0.6.0
 django-environ==0.4.5
+gunicorn==20.0.4
