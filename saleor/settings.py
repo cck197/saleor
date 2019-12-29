@@ -265,7 +265,6 @@ INSTALLED_APPS = [
     "django_prices",
     "django_prices_openexchangerates",
     "django_prices_vatlayer",
-    "django_extensions",
     "graphene_django",
     "mptt",
     "webpack_loader",
@@ -276,7 +275,8 @@ INSTALLED_APPS = [
     "phonenumber_field",
     "captcha",
 ]
-
+if DEBUG:
+    INSTALLED_APPS += ["django_extensions",]
 
 ENABLE_DEBUG_TOOLBAR = env("ENABLE_DEBUG_TOOLBAR", default=False)
 if ENABLE_DEBUG_TOOLBAR:
