@@ -447,8 +447,8 @@ bootstrap4 = {
 TEST_RUNNER = "tests.runner.PytestTestRunner"
 
 ALLOWED_HOSTS = env.list(
-    "DJANGO_ALLOWED_HOSTS",
-    default=[env("RENDER_EXTERNAL_HOSTNAME", default="localhost,127.0.0.1")],
+    "ALLOWED_HOSTS",
+    default=[env("RENDER_EXTERNAL_HOSTNAME", default="")],
 )
 ALLOWED_GRAPHQL_ORIGINS = env("ALLOWED_GRAPHQL_ORIGINS", default="*")
 
@@ -457,14 +457,24 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # Amazon S3 configuration
 AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="")
 AWS_LOCATION = env("AWS_LOCATION", default="")
-AWS_MEDIA_BUCKET_NAME = env("AWS_MEDIA_BUCKET_NAME", default="")
-AWS_MEDIA_CUSTOM_DOMAIN = env("AWS_MEDIA_CUSTOM_DOMAIN", default="")
-AWS_QUERYSTRING_AUTH = env("AWS_QUERYSTRING_AUTH", default=False)
-AWS_S3_CUSTOM_DOMAIN = env("AWS_STATIC_CUSTOM_DOMAIN", default="")
-AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", default=None)
-AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="")
 AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="")
-AWS_DEFAULT_ACL = env("AWS_DEFAULT_ACL", default=None)
+AWS_MEDIA_BUCKET_NAME = env("AWS_MEDIA_BUCKET_NAME", default="")
+AWS_DEFAULT_ACL = env("AWS_DEFAULT_ACL", default="public-read")
+AWS_BUCKET_ACL = env("AWS_BUCKET_ACL", default="public-read")
+AWS_AUTO_CREATE_BUCKET = env("AWS_AUTO_CREATE_BUCKET", default=True)
+#AWS_S3_HOST = env("AWS_S3_HOST", default="s3.amazonaws.com")
+AWS_MEDIA_CUSTOM_DOMAIN = env("AWS_MEDIA_CUSTOM_DOMAIN", default="")
+
+#AWS_MEDIA_BUCKET_NAME = env("AWS_MEDIA_BUCKET_NAME", default="")
+#AWS_MEDIA_CUSTOM_DOMAIN = env("AWS_MEDIA_CUSTOM_DOMAIN", default="")
+#AWS_QUERYSTRING_AUTH = env("AWS_QUERYSTRING_AUTH", default=False)
+#AWS_S3_CUSTOM_DOMAIN = env("AWS_S3_CUSTOM_DOMAIN", default="")
+#AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", default=None)
+#AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="")
+#AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="")
+#AWS_BUCKET_ACL = env("AWS_BUCKET_ACL", default=None)
+#AWS_DEFAULT_ACL = env("AWS_DEFAULT_ACL", default=None)
+#AWS_AUTO_CREATE_BUCKET = env("AWS_AUTO_CREATE_BUCKET", default=True)
 
 # Google Cloud Storage configuration
 GS_PROJECT_ID = env("GS_PROJECT_ID", default="")
