@@ -136,7 +136,7 @@ def checkout_index(request, checkout, single_page=False, template=None):
         pass
 
     funnel_index = request.session.get("funnel_index")
-    if funnel_index > 0: # we've already collected payment info
+    if funnel_index is not None and funnel_index > 0: # we've already collected payment info
         token = request.session["token"]
         order = get_object_or_404(Order, token=token)
         upsell_order(order, checkout, analytics.get_client_id(request))
