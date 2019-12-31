@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+{% load i18n %}
+{% load footer_menu menu from shop %}
+{% load placeholder %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% load translate_url from urls %}
+
+<html lang="{{ LANGUAGE_CODE }}" class="no-js" data-shipping-options-url="{% block shipping_options %}{% url 'checkout:shipping-options' %}{% endblock %}" data-checkout-summary-url="{% url 'checkout:dropdown' %}">
+<head>
+  <title>{% block title %}{{ site.name }}{% endblock %}</title>
+  {% block meta %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Saleor">
+    <meta name="theme-color" content="#333333">
+    <meta name="msapplication-TileColor" content="#2b5797">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="{{ site.name }}">
+    <meta name="og:type" content="website">
+    {% get_available_languages as LANGUAGES %}
+    {% for lang_code, language_name in LANGUAGES %}
+      <link rel="alternate" hreflang="{{ lang_code }}" href="{% translate_url url=request.path lang_code=lang_code %}" />
+    {% endfor %}
+  {% endblock meta %}
+
+  {% include 'favicon.html' %}
+  {% render_bundle 'storefront' 'css' attrs='async' %}
+
+  {% block stylesheet %}{% endblock stylesheet %}
+
+  {% block meta_tags %}
+    <meta property="og:title" content="{{ site.settings.translated.header_text }}">
+    <meta property="og:description" content="{{ site.settings.translated.description }}">
+    <meta name="description" content="{{ site.settings.translated.description }}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:image" content="{% static "images/block1.png" %}">
+  {% endblock meta_tags %}
+
+  <link rel="manifest" href="{% url "manifest" %}" />
+
+  <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+  <!--[if lt IE 9]>
+    <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+</head>
+
+<body>
+{% block header %}
+{% endblock %}
+<div class="container maincontent">
+  {% block topcontent %}{% endblock topcontent %}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}">
+        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+  {% block breadcrumb %}
+  {% endblock breadcrumb %}
+  {% block content %}
+  {% endblock content %}
+</div>
+{% block footer_scripts %}
+  <script type="text/javascript" src="{% url 'javascript-catalog' %}"></script>
+  {% render_bundle 'storefront' 'js' %}
+{% endblock footer_scripts %}
+</body>
+</html>

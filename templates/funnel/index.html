@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_new.html" %}
 
 {% load bootstrap_field from bootstrap4 %}
 {% load build_absolute_uri from urls %}
@@ -39,25 +39,8 @@
   {% endif %}
 {% endblock meta_tags %}
 
-{% block breadcrumb %}
-  <ul class="breadcrumbs list-unstyled">
-    <li>
-      <a href="{% url 'home' %}">
-        {% trans "Home" context "Main navigation item" %}
-      </a>
-    </li>
-    {% if product.category %}
-      <li>
-        <a href="{{ product.category.get_absolute_url }}">{{ product.category.translated }}</a>
-      </li>
-    {% endif %}
-    <li>
-      <a href="{{ product.get_absolute_url }}">{{ product.translated }}</a>
-    </li>
-  </ul>
-{% endblock breadcrumb %}
-
 {% block content %}
+<div class="container p-3">
   {% if not is_visible %}
     <div class="alert alert-warning" role="alert">
       {% blocktrans trimmed with date=product.publication_date|date context "Product details text" %}
@@ -207,22 +190,19 @@
       </div>
       {% endif %}
       <hr>
-      <table>
-        {% for attribute_rel in product.attributes.all %}
-          {% with attribute=attribute_rel.attribute %}
-            <tr>
-              <td>{{ attribute.translated }}:</td>
-              <td>
-                <strong>
-                  {% for value in attribute_rel.values.all %}
-                    {{ value.translated }}{% if not forloop.last %},{% endif %}
-                  {% endfor %}
-                </strong>
-              </td>
-            </tr>
-          {% endwith %}
-        {% endfor %}
-      </table>
+      {% for attribute_rel in product.attributes.all %}
+        {% with attribute=attribute_rel.attribute %}
+        {% if 'pf_' in attribute.slug %}
+          <small>
+          {% for value in attribute_rel.values.all %}
+            {{ value.translated }}{% if not forloop.last %},{% endif %}
+          {% endfor %}
+          </small>
+          <br/>
+        {% endif %}
+        {% endwith %}
+      {% endfor %}
     </div>
   </div>
+</div>
 {% endblock content %}

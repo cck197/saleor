@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base_new.html' %}
 
 {% load bootstrap_form from bootstrap4 %}
 {% load static %}
@@ -54,9 +54,6 @@
         <div class="col-md-6 pull-md-6">
           <img class="checkout-pirate lazyload lazypreload" data-src="{% static 'images/checkout-bg.png' %}"
                data-srcset="{% static 'images/checkout-bg.png' %} 1x, {% static 'images/checkout-bg2x.png' %} 2x">
-          <p><a href="{% url 'home' %}" class="btn secondary">
-              {% trans "Continue shopping" context "Checkout secondary action" %}
-          </a></p>
         </div>
       </div>
     </div>

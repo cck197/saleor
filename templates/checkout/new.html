@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_new.html" %}
 {% load i18n %}
 {% load get_product_image_thumbnail from product_images %}
 {% load price from taxed_prices %}
@@ -7,28 +7,108 @@
 {% load bootstrap_field from bootstrap4 %}
 {% block shipping_options %}{% url 'checkout:shipping-options-single' %}{% endblock %}
 {% block title %}{% trans "Last Step - Get Your..." context "Checkout page title" %} — {{ block.super }}{% endblock %}
-{% block breadcrumb %}
-  <ul class="breadcrumbs list-unstyled">
-    <li><a href="{% url 'home' %}">{% trans "Home" context "Main navigation item" %}</a></li>
-    <li><a rel="nofollow" href="{% url 'checkout:index' %}">{% trans "Cart" context "Checkout breadcrumb" %}</a></li>
-  </ul>
-{% endblock breadcrumb %}
 
 {% block meta_tags %}
   <meta name="robots" content="nofollow">
 {% endblock meta_tags %}
 
 {% block content %}
-<div class="container">
+<div class="container pb-3">
   <div class="row">
-    <div class="col-5">
+    <div class="col-5 p-3">
+      <img class="img-fluid" src="{% static "images/logo-ks.png" %}"/>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-7 order-md-12">
+      <h2>{% trans "Order Summary" context "Checkout order summary title" %}</h2>
+      <div class="checkout-preview">
+        {% if checkout_lines %}
+          <div class="table__header d-none d-md-block">
+            <div class="row">
+              <div class="col-md-7">
+                <small>{% trans "Product" context "Checkout table header" %}</small>
+              </div>
+              <div class="col-md-3">
+                <small>{% trans "Quantity" context "Checkout table header" %}</small>
+              </div>
+              <div class="col-md-2 text-right">
+                <small>{% trans "Price" context "Checkout table header" %}</small>
+              </div>
+            </div>
+          </div>
+          {% for line in checkout_lines %}
+          <div class="checkout-preview__line{% if forloop.last %} last{% endif %} table__row">
+            <div class="row">
+              <div class="col-7 checkout-preview__line__product">
+                <a class="link--clean" href="{{ line.variant.get_absolute_url }}">
+                  <img class="lazyload lazypreload" data-src="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=90 %}"
+                       data-srcset="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=90 %} 1x, {% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=180 %} 2x"
+                       alt="">
+                  <p>
+                    {{ line.variant.product.translated }}
+                    {% for attribute_rel in line.variant.product.attributes.all %}
+                      {% with attribute=attribute_rel.attribute %}
+                      {% if 'pf_' in attribute.slug %}
+                        <br/>
+                        <small>
+                        {% for value in attribute_rel.values.all %}
+                          {{ value.translated }}{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                        </small>
+                      {% endif %}
+                      {% endwith %}
+                    {% endfor %}
+                  </p>
+                </a>
+              </div>
+              <div class="col-5">
+                <div class="row">
+                  <div class="checkout-preview__line__quantity col-md-7 col-12">
+                    <form role="form" action="{% url "checkout:update-line" variant_id=line.variant.pk %}" method="post" class="form-checkout">
+                      <div class="{% if form.quantity.errors %} has-error{% endif %}" tabindex="-1">
+                        {{ line.form.quantity }}
+                      </div>
+                      {% csrf_token %}
+                    </form>
+                    <span class="checkout-preview-item-delete">
+                      <svg data-src="{% static "images/delete.svg" %}" height="20px" width="20px" />
+                    </span>
+                    <small class="checkout-preview__line__quantity-error text-danger"></small>
+                  </div>
+                  <div class="checkout-preview-item-price col-md-5 col-12" data-product-id="{{ line.variant.pk }}">
+                    <p class="text-right">
+                      {% price line.get_total %}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+          {% if cheesy_clock %}
+          <div id="clock__container">
+            <p>{% trans "Time Left to Confirm" context "Countdown timer" %}</p>
+						<div id="clockdiv">
+              <span class="minutes"></span>:<span class="seconds"></span>
+						</div>
+          </div>
+          {% endif %}
+          <div class="checkout__subtotal">
+            {% include 'checkout/_subtotal_table.html' with country_code=shipping.address_form.initial.country %}
+          </div>
+        {% endif %}
+        <p class="text-center"><small class="text-muted">60 Day Money Back Guarantee<br/>100% No Questions Asked</small></p>
+      </div>
+    </div>
+    <div class="col-md-5 order-sm-1">
       <form method="POST" id="payment-form" novalidate>
         <input type="hidden" id="gateway" name="gateway" value="Stripe"/>
-        <h2>{% trans "Contact Information" context "Checkout contact information title" %}</h2>
+        <h2>{% trans "Contact Information" context "Checkout contact information title" %}:</h2>
         {% csrf_token %}
-        {% bootstrap_field shipping.address_form.first_name %}
-        {% bootstrap_field shipping.address_form.last_name %}
-        {% bootstrap_field shipping.user_form.email %}
+        {% bootstrap_field shipping.address_form.first_name show_label=False %}
+        {% bootstrap_field shipping.address_form.last_name show_label=False %}
+        {% bootstrap_field shipping.user_form.email show_label=False %}
         <hr/>
         <h2>{% trans "Shipping Information" context "Checkout shipping information title" %}</h2>
         {% include "account/snippets/address_form_single.html" with address_form=shipping.address_form only %}
@@ -77,87 +157,6 @@
 				</div>
         {% endif %}
       </form>
-    </div>
-    <div class="col-7">
-      <h2>{% trans "Order Summary" context "Checkout order summary title" %}</h2>
-      <div class="checkout-preview">
-        {% if checkout_lines %}
-          <div class="table__header d-none d-md-block">
-            <div class="row">
-              <div class="col-md-7">
-                <small>{% trans "Product" context "Checkout table header" %}</small>
-              </div>
-              <div class="col-md-3">
-                <small>{% trans "Quantity" context "Checkout table header" %}</small>
-              </div>
-              <div class="col-md-2 text-right">
-                <small>{% trans "Price" context "Checkout table header" %}</small>
-              </div>
-            </div>
-          </div>
-          {% for line in checkout_lines %}
-            <div class="checkout-preview__line{% if forloop.last %} last{% endif %} table__row">
-              <div class="row">
-                <div class="col-7 checkout-preview__line__product">
-                  <a class="link--clean" href="{{ line.variant.get_absolute_url }}">
-                    <img class="lazyload lazypreload" data-src="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=60 %}"
-                         data-srcset="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=60 %} 1x, {% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=120 %} 2x"
-                         alt="">
-                    <p>{{ line.variant.product.translated }}<br><small>{{ line.variant.translated }}</small></p>
-                  </a>
-                </div>
-                <div class="col-5">
-                  <div class="row">
-                    <div class="checkout-preview__line__quantity col-md-7 col-12">
-                      <form role="form" action="{% url "checkout:update-line" variant_id=line.variant.pk %}" method="post" class="form-checkout">
-                        <div class="{% if form.quantity.errors %} has-error{% endif %}" tabindex="-1">
-                          {{ line.form.quantity }}
-                        </div>
-                        {% csrf_token %}
-                      </form>
-                      <span class="checkout-preview-item-delete">
-                        <svg data-src="{% static "images/delete.svg" %}" height="20px" width="20px" />
-                      </span>
-                      <small class="checkout-preview__line__quantity-error text-danger"></small>
-                    </div>
-                    <div class="checkout-preview-item-price col-md-5 col-12" data-product-id="{{ line.variant.pk }}">
-                      <p class="text-right">
-                        {% price line.get_total %}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          {% endfor %}
-          {% if cheesy_clock %}
-          <div class="checkout__subtotal">
-            <div class="table__row">
-              <div class="row d-flex justify-content-center">
-                <h3>{% trans "Time left to confirm" context "Cheesy clock" %}</h3>
-              </div>
-              <div class="row d-flex justify-content-center">
-                <div id="clockdiv">
-                  <div>
-                    <span class="minutes"></span>
-                    <div class="smalltext">Minutes</div>
-                  </div>
-                  <div>
-                    <span class="seconds"></span>
-                    <div class="smalltext">Seconds</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          {% endif %}
-          <div class="checkout__subtotal">
-            {% include 'checkout/_subtotal_table.html' with country_code=shipping.address_form.initial.country cheesy_clock=True %}
-          </div>
-        {% endif %}
-      </div>
-      <p class="text-center"><small class="text-muted">60 Day Money Back Guarantee</small></p>
-      <p class="text-center"><small class="text-muted">100% No Questions Asked</small></p>
     </div>
   </div>
 </div>
@@ -208,28 +207,21 @@ initializeClock('clockdiv', deadline);
 #clockdiv{
   color: #fff;
   display: inline-block;
-  font-weight: 100;
+  font-weight: 700;
   text-align: center;
   font-size: 30px;
 }
 
-#clockdiv > div{
-  padding: 10px;
-  border-radius: 3px;
-  background: #3ee7cd;
-  display: inline-block;
+#clock__container > p{
+  color: #fff;
+	font-weight: 700;
+  font-size: 20px;
 }
 
-#clockdiv div > span{
-  padding: 15px;
-  border-radius: 3px;
-  background: #13bebb;
-  display: inline-block;
-}
-
-.smalltext{
-  padding-top: 5px;
-  font-size: 16px;
+#clock__container {
+	padding: 15px 15px 5px;
+	text-align: center;
+	background: rgba(126,91,239,.7)
 }
 </style>
 {% endif %}
