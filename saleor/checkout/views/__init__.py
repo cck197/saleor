@@ -261,6 +261,8 @@ def checkout_index(request, checkout, single_page=False, template=None):
         request.session["token"] = order.token
 
         order.shipping_address = checkout.shipping_address
+        if checkout.email:
+            order.user_email = checkout.email
         if checkout.shipping_method:
             order.shipping_method = checkout.shipping_method
             order.shipping_method_name = checkout.shipping_method.name
