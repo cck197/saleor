@@ -26,10 +26,10 @@
         {% if checkout_lines %}
           <div class="table__header d-none d-md-block">
             <div class="row">
-              <div class="col-md-7">
+              <div class="col-md-8">
                 <small>{% trans "Product" context "Checkout table header" %}</small>
               </div>
-              <div class="col-md-3">
+              <div class="col-md-2">
                 <small>{% trans "Quantity" context "Checkout table header" %}</small>
               </div>
               <div class="col-md-2 text-right">
@@ -40,29 +40,33 @@
           {% for line in checkout_lines %}
           <div class="checkout-preview__line{% if forloop.last %} last{% endif %} table__row">
             <div class="row">
-              <div class="col-7 checkout-preview__line__product">
-                <a class="link--clean" href="{{ line.variant.get_absolute_url }}">
-                  <img class="lazyload lazypreload" data-src="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=90 %}"
+              <div class="col-8 checkout-preview__line__product">
+                <div class="row">
+                  <div class="col-lg-auto col-sm-auto col-md-auto">
+                    <img class="lazyload lazypreload" data-src="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=90 %}"
                        data-srcset="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=90 %} 1x, {% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=180 %} 2x"
-                       alt="">
-                  <p>
-                    {{ line.variant.product.translated }}
-                    {% for attribute_rel in line.variant.product.attributes.all %}
-                      {% with attribute=attribute_rel.attribute %}
-                      {% if 'pf_' in attribute.slug %}
-                        <br/>
-                        <small>
-                        {% for value in attribute_rel.values.all %}
-                          {{ value.translated }}{% if not forloop.last %},{% endif %}
-                        {% endfor %}
-                        </small>
-                      {% endif %}
-                      {% endwith %}
-                    {% endfor %}
-                  </p>
-                </a>
+                       alt=""/>
+                  </div>
+                  <div class="col-lg-auto col-sm-auto col-md-auto">
+                    <p>
+                      {{ line.variant.product.translated }}
+                      {% for attribute_rel in line.variant.product.attributes.all %}
+                        {% with attribute=attribute_rel.attribute %}
+                        {% if 'pf_' in attribute.slug %}
+                          <br/>
+                          <small>
+                          {% for value in attribute_rel.values.all %}
+                            {{ value.translated }}{% if not forloop.last %},{% endif %}
+                          {% endfor %}
+                          </small>
+                        {% endif %}
+                        {% endwith %}
+                      {% endfor %}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div class="col-5">
+              <div class="col-4">
                 <div class="row">
                   <div class="checkout-preview__line__quantity col-md-7 col-12">
                     <form role="form" action="{% url "checkout:update-line" variant_id=line.variant.pk %}" method="post" class="form-checkout">
@@ -71,9 +75,6 @@
                       </div>
                       {% csrf_token %}
                     </form>
-                    <span class="checkout-preview-item-delete">
-                      <svg data-src="{% static "images/delete.svg" %}" height="20px" width="20px" />
-                    </span>
                     <small class="checkout-preview__line__quantity-error text-danger"></small>
                   </div>
                   <div class="checkout-preview-item-price col-md-5 col-12" data-product-id="{{ line.variant.pk }}">
