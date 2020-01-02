@@ -58,6 +58,7 @@ from ..order.utils import add_gift_card_to_order
 
 COOKIE_NAME = "checkout"
 
+
 def clear_funnel_session(request):
     for key in ("funnel_index", "funnel_slug", "token"):
         if key in request.session:
@@ -265,7 +266,7 @@ def get_or_empty_db_checkout(checkout_queryset=Checkout.objects.all()):
 
 
 def should_redirect(request):
-    return getattr(request, 'redirect', True)
+    return getattr(request, "redirect", True)
 
 
 def find_open_checkout_for_user(user):
@@ -1083,13 +1084,11 @@ def create_line_for_order(checkout_line: "CheckoutLine", discounts) -> OrderLine
 
 
 @transaction.atomic
-def upsell_order(order: Order, checkout: Checkout, tracking_code: str):
+def upsell_order(order: Order, checkout: Checkout, tracking_code: str, discounts):
     order_data = prepare_order_data(
-        checkout=checkout,
-        tracking_code=tracking_code,
-        discounts=None
+        checkout=checkout, tracking_code=tracking_code, discounts=discounts
     )
-    order_lines = order_data['lines']
+    order_lines = order_data["lines"]
     # allocate stocks from the lines
     for line in order_lines:  # type: OrderLine
         order.lines.add(line, bulk=False)
@@ -1101,7 +1100,7 @@ def upsell_order(order: Order, checkout: Checkout, tracking_code: str):
     for gift_card in checkout.gift_cards.select_for_update():
         total_price_left = add_gift_card_to_order(order, gift_card, total_price_left)
 
-    order.total += order_data['total']
+    order.total += order_data["total"]
 
     order.save()
     return order
@@ -1163,7 +1162,9 @@ def abort_order_data(order_data: dict):
 
 
 @transaction.atomic
-def create_order(*, checkout: Checkout, order_data: dict, user: User, send_email=False) -> Order:
+def create_order(
+    *, checkout: Checkout, order_data: dict, user: User, send_email=False
+) -> Order:
     """Create an order from the checkout.
 
     Each order will get a private copy of both the billing and the shipping

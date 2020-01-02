@@ -47,7 +47,7 @@ def authorize(
     customer_id = (
         payment_information.customer_id if payment_information.reuse_source else None
     )
-    print(f"{payment_information.__dict__}")
+    print(f"authorize: {payment_information.__dict__}")
     print(f"authorize: customer_id: {customer_id}")
     shipping = (
         shipping_to_stripe_dict(payment_information.shipping)

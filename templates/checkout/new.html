@@ -78,7 +78,14 @@
                   </div>
                   <div class="checkout-preview-item-price col-md-5 col-12" data-product-id="{{ line.variant.pk }}">
                     <p class="text-right">
+                    {% with price_=line.variant.get_price price=line.get_tota %}
+                      {% if price_ != price %}
+                      <small class="product__info__price__undiscounted">
+                        {% price line.variant.get_price %}
+                      </small>
+                      {% endif %}
                       {% price line.get_total %}
+                    {% endwith %}
                     </p>
                   </div>
                 </div>

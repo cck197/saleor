@@ -136,11 +136,14 @@ def checkout_index(request, checkout, single_page=False, template=None):
         pass
 
     funnel_index = request.session.get("funnel_index")
-    if funnel_index is not None and funnel_index > 0: # we've already collected payment info
+    if (
+        funnel_index is not None and funnel_index > 0
+    ):  # we've already collected payment info
         token = request.session["token"]
         order = get_object_or_404(Order, token=token)
-        upsell_order(order, checkout, analytics.get_client_id(request))
+        upsell_order(order, checkout, analytics.get_client_id(request), discounts)
         payment = order.payments.first()
+        order_id = "{}_{}".format(order.id, funnel_index)
         payment_ = create_payment(
             gateway=payment.gateway,
             currency=order.total.gross.currency,
@@ -149,6 +152,7 @@ def checkout_index(request, checkout, single_page=False, template=None):
             customer_ip_address=payment.customer_ip_address,
             total=abs(order.total_balance.amount),
             order=order,
+            extra_data={"order_id": order_id},
         )
         tx = payment.transactions.first()
         token = tx.gateway_response.get("payment_method", "")
@@ -158,7 +162,7 @@ def checkout_index(request, checkout, single_page=False, template=None):
             token,
             store_source=True,
             customer_id=customer_id,
-            order_id="{}_{}".format(order.id, funnel_index),
+            order_id=order_id,
         )
         funnel_index = funnel_index + 1
         request.session["funnel_index"] = funnel_index
@@ -166,11 +170,7 @@ def checkout_index(request, checkout, single_page=False, template=None):
         order.save()
         checkout.delete()
         if funnel.products.count() > funnel_index:
-            return redirect(
-                "product:funnel",
-                slug=funnel.slug,
-                pk=funnel.id,
-            )
+            return redirect("product:funnel", slug=funnel.slug, pk=funnel.id)
         else:
             return redirect("order:payment-success", token=order.token)
 
@@ -240,8 +240,8 @@ def checkout_index(request, checkout, single_page=False, template=None):
         response = anonymous_user_shipping_address_view(request, checkout)
         ctx.update({"shipping": response.context_data})
         checkout.refresh_from_db()
-        #response = checkout_shipping_method(request)
-        #ctx.update({"shipping_method": response.context_data})
+        # response = checkout_shipping_method(request)
+        # ctx.update({"shipping_method": response.context_data})
 
         # skip the shipping method form and choose the cheapest
         if checkout.shipping_method is None:
@@ -267,20 +267,19 @@ def checkout_index(request, checkout, single_page=False, template=None):
         update_order_prices(order, discounts)
         order.save()
 
-
-        if request.method == 'POST':
-            gateway = request.POST['gateway']
+        if request.method == "POST":
+            gateway = request.POST["gateway"]
             if not order.is_fully_paid():
                 response = start_payment(request, token=order.token, gateway=gateway)
             if not order.is_fully_paid():
                 ctx[gateway] = response.context_data
         else:
-            for gateway in ["Stripe", "Braintree"]: # TODO config
+            for gateway in ["Stripe", "Braintree"]:  # TODO config
                 response = start_payment(request, token=order.token, gateway=gateway)
                 ctx[gateway] = response.context_data
         if (
             ctx["shipping"]["updated"]
-            #and ctx["shipping_method"]["updated"]
+            # and ctx["shipping_method"]["updated"]
             and order.is_fully_paid()
         ):
             checkout.delete()
@@ -373,7 +372,7 @@ def clear_checkout(request, checkout):
         response = {"numItems": 0}
         return JsonResponse(response)
     else:
-        return redirect("/") # TODO
+        return redirect("/")  # TODO
 
 
 @get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())
