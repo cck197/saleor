@@ -5,6 +5,9 @@
 {% load static %}
 {% load bootstrap_form from bootstrap4 %}
 {% load bootstrap_field from bootstrap4 %}
+{% load get_product_features from product_attr %}
+{% load get_product_price_features from product_attr %}
+
 {% block shipping_options %}{% url 'checkout:shipping-options-single' %}{% endblock %}
 {% block title %}{% trans "Last Step - Get Your..." context "Checkout page title" %} — {{ block.super }}{% endblock %}
 
@@ -26,13 +29,10 @@
         {% if checkout_lines %}
           <div class="table__header d-none d-md-block">
             <div class="row">
-              <div class="col-md-8">
+              <div class="col-md-9">
                 <small>{% trans "Product" context "Checkout table header" %}</small>
               </div>
-              <div class="col-md-2">
-                <small>{% trans "Quantity" context "Checkout table header" %}</small>
-              </div>
-              <div class="col-md-2 text-right">
+              <div class="col-md-3 text-right">
                 <small>{% trans "Price" context "Checkout table header" %}</small>
               </div>
             </div>
@@ -40,7 +40,7 @@
           {% for line in checkout_lines %}
           <div class="checkout-preview__line{% if forloop.last %} last{% endif %} table__row">
             <div class="row">
-              <div class="col-8 checkout-preview__line__product">
+              <div class="col-9 checkout-preview__line__product">
                 <div class="row">
                   <div class="col-lg-auto col-sm-auto col-md-auto">
                     <img class="lazyload lazypreload" data-src="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=90 %}"
@@ -50,46 +50,31 @@
                   <div class="col-lg-auto col-sm-auto col-md-auto">
                     <p>
                       {{ line.variant.product.translated }}
-                      {% for attribute_rel in line.variant.product.attributes.all %}
-                        {% with attribute=attribute_rel.attribute %}
-                        {% if 'pf_' in attribute.slug %}
-                          <br/>
-                          <small>
-                          {% for value in attribute_rel.values.all %}
-                            {{ value.translated }}{% if not forloop.last %},{% endif %}
-                          {% endfor %}
-                          </small>
-                        {% endif %}
-                        {% endwith %}
-                      {% endfor %}
+                      {% get_product_price_features line.variant.product as features %}
+                      {% if features %}
+                        <br/>
+                        <small><b>({{ features|join:", " }})</b></small>
+                      {% endif %}
+                      {% get_product_features line.variant.product as features %}
+                      {% if features %}
+                      <br/>
+                      <small>{{ features|join:"<br/>" }}</small>
+                      {% endif %}
                     </p>
                   </div>
                 </div>
               </div>
-              <div class="col-4">
-                <div class="row">
-                  <div class="checkout-preview__line__quantity col-md-7 col-12">
-                    <form role="form" action="{% url "checkout:update-line" variant_id=line.variant.pk %}" method="post" class="form-checkout">
-                      <div class="{% if form.quantity.errors %} has-error{% endif %}" tabindex="-1">
-                        {{ line.form.quantity }}
-                      </div>
-                      {% csrf_token %}
-                    </form>
-                    <small class="checkout-preview__line__quantity-error text-danger"></small>
-                  </div>
-                  <div class="checkout-preview-item-price col-md-5 col-12" data-product-id="{{ line.variant.pk }}">
-                    <p class="text-right">
-                    {% with price_=line.variant.get_price price=line.get_tota %}
-                      {% if price_ != price %}
-                      <small class="product__info__price__undiscounted">
-                        {% price line.variant.get_price %}
-                      </small>
-                      {% endif %}
-                      {% price line.get_total %}
-                    {% endwith %}
-                    </p>
-                  </div>
-                </div>
+              <div class="col-3">
+                {% with pun=line.variant.get_price pd=line.get_total %}
+                <p class="text-right">
+                  {% if pun != pd %}
+                  <small class="product__info__price__undiscounted">
+                    {% price pun %}
+                  </small>
+                  {% endif %}
+                  {% price pd %}
+                </p>
+                {% endwith %}
               </div>
             </div>
           </div>

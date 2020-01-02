@@ -358,6 +358,13 @@ class Product(SeoModel, ModelWithMetadata, PublishableModel):
         if vals:
             return vals[0]
 
+    def get_attr_startswith(self, slug_prefix):
+        for attribute_rel in self.attributes.all():
+            attribute = attribute_rel.attribute
+            if attribute.slug.startswith(slug_prefix):
+                for value in attribute_rel.values.all():
+                    yield value.translated
+
 
 class ProductTranslation(SeoModelTranslation):
     language_code = models.CharField(max_length=10)
