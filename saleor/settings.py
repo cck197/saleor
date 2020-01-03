@@ -136,6 +136,8 @@ EMAIL_BACKEND = email_config["EMAIL_BACKEND"]
 EMAIL_USE_TLS = email_config["EMAIL_USE_TLS"]
 EMAIL_USE_SSL = email_config["EMAIL_USE_SSL"]
 
+EMAIL_ORDER_CONF_DELAY = env("EMAIL_ORDER_CONF_DELAY", default=60)
+
 ENABLE_SSL = env("ENABLE_SSL", default=False)
 
 if ENABLE_SSL:
@@ -577,7 +579,7 @@ SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
 # CELERY SETTINGS
 CELERY_BROKER_URL = (
-    env("CELERY_BROKER_URL", default=env("CLOUDAMQP_URL", default="")) or ""
+    env("CELERY_BROKER_URL", default=env("REDIS_URL", default="")) or ""
 )
 CELERY_TASK_ALWAYS_EAGER = not CELERY_BROKER_URL
 CELERY_ACCEPT_CONTENT = ["json"]

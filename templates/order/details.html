@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_new.html" %}
 
 {% load i18n %}
 {% load static %}
@@ -9,30 +9,6 @@
     Order {{ order }}
   {% endblocktrans %} — {{ block.super }}
 {% endblock %}
-
-{% block breadcrumb %}
-  {% if order.user == user %}
-    <ul class="breadcrumbs list-unstyled">
-      <li>
-        <a href="{% url 'home'%}">
-          {% trans "Home" context "Main navigation item" %}
-        </a>
-      </li>
-      <li>
-        <a href="{% url "account:details" %}">
-          {% trans "Your account" context "Main navigation item" %}
-        </a>
-      </li>
-      <li>
-        <a href="{{ order.get_absolute_url }}">
-          {% blocktrans trimmed context "Order details breadcrumb" %}
-            Order {{ order }}
-          {% endblocktrans %}
-        </a>
-      </li>
-    </ul>
-  {% endif %}
-{% endblock breadcrumb %}
 
 {% block meta_tags %}
   <meta name="robots" content="noindex, nofollow">

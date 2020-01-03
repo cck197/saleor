@@ -10,6 +10,7 @@ from ...core.utils import format_money, get_user_shipping_country, to_local_curr
 from ..forms import CheckoutShippingMethodForm, CountryForm, ReplaceCheckoutLineForm
 from ..models import Checkout
 from ...product.models import Collection
+from ...order.emails import send_order_confirmation
 from ..utils import (
     clear_funnel_session,
     create_order,
@@ -256,7 +257,10 @@ def checkout_index(request, checkout, single_page=False, template=None):
             discounts=discounts,
         )
         order = create_order(
-            checkout=checkout, order_data=order_data, user=request.user
+            checkout=checkout,
+            order_data=order_data,
+            user=request.user,
+            send_email=False, # don't send the conf email yet
         )
         request.session["token"] = order.token
 
@@ -286,6 +290,11 @@ def checkout_index(request, checkout, single_page=False, template=None):
         ):
             checkout.delete()
             request.session["funnel_index"] = funnel_index + 1
+            # send the order conf in the future to allow time for upsells
+            send_order_confirmation.apply_async(
+                args=[order.pk, request.user and request.user.pk or None],
+                countdown=settings.EMAIL_ORDER_CONF_DELAY,
+            )
             return redirect("order:payment-success", token=order.token)
     template = "checkout/{}".format("index.html" if template is None else template)
     return TemplateResponse(request, template, ctx)
