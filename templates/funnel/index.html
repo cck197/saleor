@@ -130,7 +130,7 @@
               </small>
             {% endif %}
             {% get_product_price_features product as features %}
-            {% if features|length %}
+            {% if features %}
               &nbsp;<small>({{ features|join:", " }})</small>
             {% endif %}
             {% if request.extensions.show_taxes_on_storefront %}

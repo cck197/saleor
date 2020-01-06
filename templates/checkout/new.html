@@ -51,7 +51,7 @@
                     <p>
                       {{ line.variant.product.translated }}
                       {% get_product_price_features line.variant.product as features %}
-                      {% if features|length %}
+                      {% if features %}
                         <br/>
                         <small><b>({{ features|join:", " }})</b></small>
                       {% endif %}
