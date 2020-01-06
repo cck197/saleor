@@ -121,12 +121,112 @@ def checkout_order_summary(request, checkout):
     return anonymous_summary_without_shipping(request, checkout)
 
 
-@get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())
-def checkout_index(request, checkout, single_page=False, template=None):
+def checkout_index(request, checkout):
     """Display checkout details."""
     discounts = request.discounts
     checkout_lines = []
     check_product_availability_and_warn(request, checkout)
+
+    # refresh required to get updated checkout lines and it's quantity
+    try:
+        checkout = Checkout.objects.prefetch_related(
+            "lines__variant__product__category"
+        ).get(pk=checkout.pk)
+    except Checkout.DoesNotExist:
+        pass
+
+    lines = checkout.lines.select_related("variant__product__product_type")
+    lines = lines.prefetch_related(
+        "variant__translations",
+        "variant__product__translations",
+        "variant__product__images",
+        "variant__product__product_type__variant_attributes__translations",
+        "variant__images",
+        "variant__product__product_type__variant_attributes",
+    )
+    manager = request.extensions
+    for line in lines:
+        initial = {"quantity": line.quantity}
+        form = ReplaceCheckoutLineForm(
+            None,
+            checkout=checkout,
+            variant=line.variant,
+            initial=initial,
+            discounts=discounts,
+        )
+        total_line = manager.calculate_checkout_line_total(line, discounts)
+        variant_price = quantize_price(total_line / line.quantity, total_line.currency)
+        checkout_lines.append(
+            {
+                "variant": line.variant,
+                "get_price": variant_price,
+                "get_total": total_line,
+                "form": form,
+            }
+        )
+
+    default_country = get_user_shipping_country(request)
+    country_form = CountryForm(initial={"country": default_country})
+    shipping_price_range = get_shipping_price_estimate(
+        price=manager.calculate_checkout_subtotal(checkout, discounts).gross,
+        weight=checkout.get_total_weight(),
+        country_code=default_country,
+    )
+
+    context = get_checkout_context(
+        checkout,
+        discounts,
+        currency=request.currency,
+        shipping_range=shipping_price_range,
+    )
+    context.update(
+        {
+            "checkout_lines": checkout_lines,
+            "country_form": country_form,
+            "shipping_price_range": shipping_price_range,
+        }
+    )
+    return TemplateResponse(request, "checkout/index.html", context)
+
+
+@get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())
+def blank(request, checkout):
+    try:
+        checkout = Checkout.objects.prefetch_related(
+            "lines__variant__product__category"
+        ).get(pk=checkout.pk)
+    except Checkout.DoesNotExist:
+        pass
+    discounts = request.discounts
+    checkout_lines = []
+    lines = checkout.lines.select_related("variant__product__product_type")
+    lines = lines.prefetch_related(
+        "variant__translations",
+        "variant__product__translations",
+        "variant__product__images",
+        "variant__product__product_type__variant_attributes__translations",
+        "variant__images",
+        "variant__product__product_type__variant_attributes",
+    )
+    manager = request.extensions
+    for line in lines:
+        initial = {"quantity": line.quantity}
+        total_line = manager.calculate_checkout_line_total(line, discounts)
+        variant_price = quantize_price(total_line / line.quantity, total_line.currency)
+        checkout_lines.append(
+            {
+                "variant": line.variant,
+                "get_price": variant_price,
+                "get_total": total_line,
+            }
+        )
+    return TemplateResponse(request, "checkout/blank.html")
+
+@get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())
+def checkout_index_new(request, checkout):
+    """Display checkout details."""
+    discounts = request.discounts
+    checkout_lines = []
 
     # refresh required to get updated checkout lines and it's quantity
     try:
@@ -174,7 +274,6 @@ def checkout_index(request, checkout, single_page=False, template=None):
             return redirect("product:funnel", slug=funnel.slug, pk=funnel.id)
         else:
             return redirect("order:payment-success", token=order.token)
-
     lines = checkout.lines.select_related("variant__product__product_type")
     lines = lines.prefetch_related(
         "variant__translations",
@@ -187,13 +286,6 @@ def checkout_index(request, checkout, single_page=False, template=None):
     manager = request.extensions
     for line in lines:
         initial = {"quantity": line.quantity}
-        form = ReplaceCheckoutLineForm(
-            None,
-            checkout=checkout,
-            variant=line.variant,
-            initial=initial,
-            discounts=discounts,
-        )
         total_line = manager.calculate_checkout_line_total(line, discounts)
         variant_price = quantize_price(total_line / line.quantity, total_line.currency)
         checkout_lines.append(
@@ -201,21 +293,17 @@ def checkout_index(request, checkout, single_page=False, template=None):
                 "variant": line.variant,
                 "get_price": variant_price,
                 "get_total": total_line,
-                "form": form,
             }
         )
     ctx = {}
-    if single_page:
-        # calling the views below as functions invokes a bunch of decorators
-        # that might redirect the request. That's not what we want here for the
-        # single page checkout, so set a flag in the request and check in the
-        # views and decorators.
-        request.redirect = False
-        response = anonymous_user_shipping_address_view(request, checkout)
-        ctx.update({"shipping": response.context_data, "cheesy_clock": True})
-        country_code = ctx["shipping"]["address_form"].initial["country"]
-    else:
-        country_code = get_user_shipping_country(request)
+    # calling the views below as functions invokes a bunch of decorators
+    # that might redirect the request. That's not what we want here for the
+    # single page checkout, so set a flag in the request and check in the
+    # views and decorators.
+    request.redirect = False
+    response = anonymous_user_shipping_address_view(request, checkout, get_ctx=False)
+    ctx.update({"shipping": response.context_data, "cheesy_clock": True})
+    country_code = ctx["shipping"]["address_form"].initial["country"]
     country_form = CountryForm(initial={"country": country_code})
     shipping_price_range = get_shipping_price_estimate(
         checkout, discounts, country_code=country_code
@@ -234,70 +322,68 @@ def checkout_index(request, checkout, single_page=False, template=None):
             "checkout_lines": checkout_lines,
             "country_form": country_form,
             "shipping_price_range": shipping_price_range,
-            "single_page": single_page,
+            "single_page": True,
         }
     )
-    if single_page:
-        response = anonymous_user_shipping_address_view(request, checkout)
-        ctx.update({"shipping": response.context_data})
-        checkout.refresh_from_db()
-        # response = checkout_shipping_method(request)
-        # ctx.update({"shipping_method": response.context_data})
+    response = anonymous_user_shipping_address_view(request, checkout)
+    ctx.update({"shipping": response.context_data})
+    checkout.refresh_from_db()
+    # response = checkout_shipping_method(request)
+    # ctx.update({"shipping_method": response.context_data})
 
-        # skip the shipping method form and choose the cheapest
-        if checkout.shipping_method is None:
-            checkout.shipping_method = get_valid_shipping_methods_for_checkout(
-                checkout, discounts, country_code=country_code
-            ).first()
-            checkout.save()
+    # skip the shipping method form and choose the cheapest
+    if checkout.shipping_method is None:
+        checkout.shipping_method = get_valid_shipping_methods_for_checkout(
+            checkout, discounts, country_code=country_code
+        ).first()
+        checkout.save()
 
-        order_data = prepare_order_data(
-            checkout=checkout,
-            tracking_code=analytics.get_client_id(request),
-            discounts=discounts,
+    order_data = prepare_order_data(
+        checkout=checkout,
+        tracking_code=analytics.get_client_id(request),
+        discounts=discounts,
+    )
+    order = create_order(
+        checkout=checkout,
+        order_data=order_data,
+        user=request.user,
+        send_email=False,  # don't send the conf email yet
+    )
+    request.session["token"] = order.token
+
+    order.shipping_address = checkout.shipping_address
+    if checkout.email:
+        order.user_email = checkout.email
+    if checkout.shipping_method:
+        order.shipping_method = checkout.shipping_method
+        order.shipping_method_name = checkout.shipping_method.name
+    update_order_prices(order, discounts)
+    order.save()
+
+    if request.method == "POST":
+        gateway = request.POST["gateway"]
+        if not order.is_fully_paid():
+            response = start_payment(request, token=order.token, gateway=gateway)
+        if not order.is_fully_paid():
+            ctx[gateway] = response.context_data
+    else:
+        for gateway in ["Stripe", "Braintree"]:  # TODO config
+            response = start_payment(request, token=order.token, gateway=gateway)
+            ctx[gateway] = response.context_data
+    if (
+        ctx["shipping"]["updated"]
+        # and ctx["shipping_method"]["updated"]
+        and order.is_fully_paid()
+    ):
+        checkout.delete()
+        request.session["funnel_index"] = funnel_index + 1
+        # send the order conf in the future to allow time for upsells
+        send_order_confirmation.apply_async(
+            args=[order.pk, request.user and request.user.pk or None],
+            countdown=settings.EMAIL_ORDER_CONF_DELAY,
         )
-        order = create_order(
-            checkout=checkout,
-            order_data=order_data,
-            user=request.user,
-            send_email=False, # don't send the conf email yet
-        )
-        request.session["token"] = order.token
-
-        order.shipping_address = checkout.shipping_address
-        if checkout.email:
-            order.user_email = checkout.email
-        if checkout.shipping_method:
-            order.shipping_method = checkout.shipping_method
-            order.shipping_method_name = checkout.shipping_method.name
-        update_order_prices(order, discounts)
-        order.save()
-
-        if request.method == "POST":
-            gateway = request.POST["gateway"]
-            if not order.is_fully_paid():
-                response = start_payment(request, token=order.token, gateway=gateway)
-            if not order.is_fully_paid():
-                ctx[gateway] = response.context_data
-        else:
-            for gateway in ["Stripe", "Braintree"]:  # TODO config
-                response = start_payment(request, token=order.token, gateway=gateway)
-                ctx[gateway] = response.context_data
-        if (
-            ctx["shipping"]["updated"]
-            # and ctx["shipping_method"]["updated"]
-            and order.is_fully_paid()
-        ):
-            checkout.delete()
-            request.session["funnel_index"] = funnel_index + 1
-            # send the order conf in the future to allow time for upsells
-            send_order_confirmation.apply_async(
-                args=[order.pk, request.user and request.user.pk or None],
-                countdown=settings.EMAIL_ORDER_CONF_DELAY,
-            )
-            return redirect("order:payment-success", token=order.token)
-    template = "checkout/{}".format("index.html" if template is None else template)
-    return TemplateResponse(request, template, ctx)
+        return redirect("order:payment-success", token=order.token)
+    return TemplateResponse(request, "checkout/new.html", ctx)
 
 
 @get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())

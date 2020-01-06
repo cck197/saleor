@@ -220,10 +220,10 @@ MIDDLEWARE = [
     "saleor.core.middleware.currency",
     "saleor.core.middleware.site",
     "saleor.core.middleware.extensions",
-    "social_django.middleware.SocialAuthExceptionMiddleware",
-    "impersonate.middleware.ImpersonateMiddleware",
-    "saleor.graphql.middleware.jwt_middleware",
-    "saleor.graphql.middleware.service_account_middleware",
+    #"social_django.middleware.SocialAuthExceptionMiddleware",
+    #"impersonate.middleware.ImpersonateMiddleware",
+    #"saleor.graphql.middleware.jwt_middleware",
+    #"saleor.graphql.middleware.service_account_middleware",
 ]
 
 INSTALLED_APPS = [
@@ -276,9 +276,12 @@ INSTALLED_APPS = [
     "impersonate",
     "phonenumber_field",
     "captcha",
+    "cachalot",
 ]
 if DEBUG:
     INSTALLED_APPS += ["django_extensions",]
+
+SILENCED_SYSTEM_CHECKS = ["cachalot.E003"]
 
 ENABLE_DEBUG_TOOLBAR = env("ENABLE_DEBUG_TOOLBAR", default=False)
 if ENABLE_DEBUG_TOOLBAR:
@@ -303,6 +306,7 @@ if ENABLE_DEBUG_TOOLBAR:
         "debug_toolbar.panels.request.RequestPanel",
         "debug_toolbar.panels.sql.SQLPanel",
         "debug_toolbar.panels.profiling.ProfilingPanel",
+        "cachalot.panels.CachalotPanel",
     ]
     DEBUG_TOOLBAR_CONFIG = {"RESULTS_CACHE_SIZE": 100}
 

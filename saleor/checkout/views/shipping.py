@@ -9,7 +9,7 @@ from ..utils import (
 )
 
 
-def anonymous_user_shipping_address_view(request, checkout):
+def anonymous_user_shipping_address_view(request, checkout, get_ctx=True):
     """Display the shipping step for a user who is not logged in."""
     user_form, address_form, updated = update_shipping_address_in_anonymous_checkout(
         checkout, request.POST or None, request.country
@@ -18,7 +18,7 @@ def anonymous_user_shipping_address_view(request, checkout):
     if updated and should_redirect(request):
         return redirect("checkout:shipping-method")
 
-    ctx = get_checkout_context(checkout, request.discounts)
+    ctx = get_checkout_context(checkout, request.discounts) if get_ctx else {}
     ctx.update(
         {"address_form": address_form, "user_form": user_form, "updated": updated}
     )

@@ -5,15 +5,18 @@ from .views.discount import remove_voucher_view
 
 checkout_urlpatterns = [
     url(
+        r"^blank$",
+        views.blank,
+    ),
+    url(
         r"^multi$",
         views.checkout_index,
         name="multi",
     ),
     url(
         r"^$",
-        views.checkout_index,
+        views.checkout_index_new,
         name="index",
-        kwargs={"single_page": True, "template": "new.html"},
     ),
     url(r"^start$", views.checkout_start, name="start"),
     url(
