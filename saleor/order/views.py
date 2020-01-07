@@ -89,6 +89,23 @@ def payment(request, token):
     return TemplateResponse(request, "order/payment.html", ctx)
 
 
+from functools import wraps
+from time import time
+
+
+def timing(f):
+    @wraps(f)
+    def wrap(*args, **kw):
+        ts = time()
+        result = f(*args, **kw)
+        te = time()
+        print("func:%r args:[%r, %r] took: %2.4f sec" % (f.__name__, args, kw, te - ts))
+        return result
+
+    return wrap
+
+
+#@timing
 @check_order_status
 def start_payment(request, order, gateway):
     extra_data = {"customer_user_agent": request.META.get("HTTP_USER_AGENT")}
@@ -134,15 +151,22 @@ def start_payment(request, order, gateway):
                         return redirect("order:payment-success", token=order.token)
                     return redirect(order.get_absolute_url())
 
-    client_token = payment_gateway.get_client_token(payment.gateway, customer_id)
-    ctx = {
-        "form": form,
-        "payment": payment,
-        "client_token": client_token,
-        "order": order,
-    }
+    ctx = {"form": form, "payment": payment, "order": order}
+    if should_redirect(request):
+        ctx["client_token"] = payment_gateway.get_client_token(
+            payment.gateway, customer_id
+        )
     template_path = payment_gateway.get_template_path(payment.gateway)
     return TemplateResponse(request, template_path, ctx)
+
+
+from django.http import JsonResponse
+
+
+def get_client_token(request, gateway):
+    customer_id = None
+    client_token = payment_gateway.get_client_token(gateway, customer_id)
+    return JsonResponse({"client_token": client_token})
 
 
 @check_order_status
@@ -181,11 +205,7 @@ def checkout_success(request, token):
         funnel = get_object_or_404(Collection, slug=funnel_slug)
         funnel_index = request.session["funnel_index"]
         if funnel.products.count() > funnel_index:
-            return redirect(
-                "product:funnel",
-                slug=funnel.slug,
-                pk=funnel.id,
-            )
+            return redirect("product:funnel", slug=funnel.slug, pk=funnel.id)
         else:
             clear_funnel_session(request)
     email = order.user_email

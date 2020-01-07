@@ -46,7 +46,7 @@ def create_payment_information(
         shipping = AddressData(**payment.order.shipping_address.as_data())
 
     if order_id is None:
-        order_id = payment.order.pk if payment.order else None
+        order_id = payment.order_id if payment.order else None
 
     return PaymentData(
         token=payment_token,

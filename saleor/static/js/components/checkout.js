@@ -38,6 +38,18 @@ export const onAddToCheckoutSuccess = response => {
 };
 
 export default $(document).ready(e => {
+  // Payment gateway client_token
+  $("#client_token").each(function(index, element) {
+    $.ajax({
+      url: element.dataset.action,
+      type: 'get',
+      dataType: 'json',
+      success: function (data) {
+        element.value = data.client_token;
+        $(element).trigger("change");
+      }
+    });
+  });
   // Checkout dropdown
   $.get(summaryLink, data => {
     $checkoutDropdown.html(data);

@@ -276,12 +276,15 @@ INSTALLED_APPS = [
     "impersonate",
     "phonenumber_field",
     "captcha",
-    "cachalot",
 ]
+ENABLE_CACHALOT = env("ENABLE_CACHALOT", default=True)
+if ENABLE_CACHALOT:
+    INSTALLED_APPS += ["cachalot",]
+    SILENCED_SYSTEM_CHECKS = ["cachalot.E003"]
 if DEBUG:
     INSTALLED_APPS += ["django_extensions",]
 
-SILENCED_SYSTEM_CHECKS = ["cachalot.E003"]
+
 
 ENABLE_DEBUG_TOOLBAR = env("ENABLE_DEBUG_TOOLBAR", default=False)
 if ENABLE_DEBUG_TOOLBAR:
@@ -306,8 +309,9 @@ if ENABLE_DEBUG_TOOLBAR:
         "debug_toolbar.panels.request.RequestPanel",
         "debug_toolbar.panels.sql.SQLPanel",
         "debug_toolbar.panels.profiling.ProfilingPanel",
-        "cachalot.panels.CachalotPanel",
     ]
+    if ENABLE_CACHALOT:
+        DEBUG_TOOLBAR_PANELS += ["cachalot.panels.CachalotPanel",]
     DEBUG_TOOLBAR_CONFIG = {"RESULTS_CACHE_SIZE": 100}
 
 ENABLE_SILK = env("ENABLE_SILK", default=False)

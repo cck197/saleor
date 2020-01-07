@@ -4,6 +4,7 @@ from ..core import TOKEN_PATTERN
 from . import views
 
 urlpatterns = [
+    url(r"^client-token/(?P<gateway>[-\w]+)/$", views.get_client_token, name="client-token"),
     url(r"^%s/$" % (TOKEN_PATTERN,), views.details, name="details"),
     url(r"^%s/payment/$" % (TOKEN_PATTERN,), views.payment, name="payment"),
     url(

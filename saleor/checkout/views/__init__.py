@@ -368,7 +368,7 @@ def checkout_index_new(request, checkout):
             ctx[gateway] = response.context_data
     else:
         for gateway in ["Stripe", "Braintree"]:  # TODO config
-            response = start_payment(request, token=order.token, gateway=gateway)
+            response = start_payment(request, order=order, gateway=gateway)
             ctx[gateway] = response.context_data
     if (
         ctx["shipping"]["updated"]

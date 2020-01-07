@@ -54,12 +54,13 @@ def check_order_status(func):
 
     @wraps(func)
     def decorator(*args, **kwargs):
-        token = kwargs.pop("token")
-        request = args[0]
-        order = get_object_or_404(Order.objects.confirmed(), token=token)
-        if should_redirect(request) and (not order.billing_address or order.is_fully_paid()):
-            return redirect("order:details", token=order.token)
-        kwargs["order"] = order
+        if not 'order' in kwargs:
+            token = kwargs.pop("token")
+            request = args[0]
+            order = get_object_or_404(Order.objects.confirmed(), token=token)
+            if should_redirect(request) and (not order.billing_address or order.is_fully_paid()):
+                return redirect("order:details", token=order.token)
+            kwargs["order"] = order
         return func(*args, **kwargs)
 
     return decorator

@@ -41,6 +41,7 @@ class ExtensionsManager(PaymentInterface):
             )
         return value
 
+
     def __run_method_on_single_plugin(
         self,
         plugin: "BasePlugin",
