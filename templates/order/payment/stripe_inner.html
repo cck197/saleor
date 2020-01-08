@@ -12,7 +12,7 @@
   <div id="error" class="error"></div>
 </div>
 {% csrf_token %}
-<input type="hidden" id="client_token" name="Stripe" data-action="{% url 'order:client-token' 'Stripe'  %}"/>
+<input type="hidden" class="client_token" name="Stripe" data-action="{% url 'order:client-token' 'Stripe'  %}"/>
 {{ form.payment_method_id.as_hidden }}
 
 <script src="https://js.stripe.com/v3/"></script>

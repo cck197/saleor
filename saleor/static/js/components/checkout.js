@@ -37,9 +37,49 @@ export const onAddToCheckoutSuccess = response => {
   }
 };
 
+const getTimeRemaining = endtime => {
+  var t = Date.parse(endtime) - Date.parse(new Date());
+  var seconds = Math.floor((t / 1000) % 60);
+  var minutes = Math.floor((t / 1000 / 60) % 60);
+  var hours = Math.floor((t / (1000 * 60 * 60)) % 24);
+  var days = Math.floor(t / (1000 * 60 * 60 * 24));
+  return {
+    'total': t,
+    'days': days,
+    'hours': hours,
+    'minutes': minutes,
+    'seconds': seconds
+  };
+}
+
+const initializeClock = (clock, endtime) => {
+  var minutesSpan = clock.find(".minutes");
+  var secondsSpan = clock.find(".seconds");
+
+  const updateClock = () => {
+    var t = getTimeRemaining(endtime);
+
+    minutesSpan.html(('0' + t.minutes).slice(-2));
+    secondsSpan.html(('0' + t.seconds).slice(-2));
+
+    if (t.total <= 0) {
+      clearInterval(timeinterval);
+    }
+  }
+
+  updateClock();
+  var timeinterval = setInterval(updateClock, 1000);
+}
+
 export default $(document).ready(e => {
+  // cheesy countdown timer
+  var clock = $("#clockdiv");
+  if (clock) {
+    var deadline = new Date(Date.parse(new Date()) + 15 * 60 * 1000);
+    initializeClock(clock, deadline);
+  }
   // Payment gateway client_token
-  $("#client_token").each(function(index, element) {
+  $(".client_token").each(function(index, element) {
     $.ajax({
       url: element.dataset.action,
       type: 'get',

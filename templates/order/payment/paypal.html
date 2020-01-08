@@ -2,7 +2,7 @@
 
 {% csrf_token %}
 <input type="hidden" id="nonce" name="payment_method_nonce"/>
-<input type="hidden" id="client_token" name="Braintree" data-action="{% url 'order:client-token' 'Braintree'  %}"/>
+<input type="hidden" class="client_token" name="Braintree" data-action="{% url 'order:client-token' 'Braintree'  %}"/>
 <input type="hidden" id="amount" name="amount" value="{% localize off %}{{ payment.total }}{% endlocalize %}"/>
 <div id="paypal-button"></div>
 
