@@ -24,7 +24,7 @@
   </div>
   <div class="row">
     <div class="col-md-7 order-md-12">
-      <h2>{% trans "Order Summary" context "Checkout order summary title" %}</h2>
+      <h3>{% trans "Order Summary" context "Checkout order summary title" %}</h3>
       <div class="checkout-preview">
         {% if checkout_lines %}
           <div class="table__header d-none d-md-block">
@@ -97,13 +97,13 @@
     <div class="col-md-5 order-sm-1">
       <form method="POST" id="payment-form" novalidate>
         <input type="hidden" id="gateway" name="gateway" value="Stripe"/>
-        <h2>{% trans "Contact Information" context "Checkout contact information title" %}:</h2>
+        <h3>{% trans "Contact Information" context "Checkout contact information title" %}:</h3>
         {% csrf_token %}
         {% bootstrap_field shipping.address_form.first_name show_label=False %}
         {% bootstrap_field shipping.address_form.last_name show_label=False %}
         {% bootstrap_field shipping.user_form.email show_label=False %}
         <hr/>
-        <h2>{% trans "Shipping Information" context "Checkout shipping information title" %}</h2>
+        <h3>{% trans "Shipping Information" context "Checkout shipping information title" %}</h3>
         {% include "account/snippets/address_form_single.html" with address_form=shipping.address_form only %}
 
         {% if not Stripe and not Braintree  %}
@@ -112,7 +112,7 @@
         </button>
         {% else %}
         <hr/>
-        <h2>{% trans "Payment Information" context "Checkout payment information title" %}</h2>
+        <h3>{% trans "Payment Information" context "Checkout payment information title" %}</h3>
 				<ul class="nav nav-tabs col-lg-10 m-auto" role="tablist">
           {% if Stripe %}
 					<li class="nav-item">

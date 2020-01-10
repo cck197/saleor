@@ -1,4 +1,26 @@
 @font-face {
+  font-family: "Poppins";
+  src: url("../fonts/poppins-v9-latin-300.woff2") format("woff2"),
+    url("../fonts/poppins-v9-latin-300.woff") format("woff"),
+    url("../fonts/poppins-v9-latin-300.ttf") format("truetype");
+  font-weight: 300;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("../fonts/poppins-v9-latin-regular.woff2") format("woff2"),
+    url("../fonts/poppins-v9-latin-regular.woff") format("woff"),
+    url("../fonts/poppins-v9-latin-regular.ttf") format("truetype");
+  font-weight: 400;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("../fonts/poppins-v9-latin-600.woff2") format("woff2"),
+    url("../fonts/poppins-v9-latin-600.woff") format("woff"),
+    url("../fonts/poppins-v9-latin-600.ttf") format("truetype");
+  font-weight: 600;
+}
+
+@font-face {
   font-family: "Lato";
   src: url("../fonts/Lato-Light.woff2") format("woff2"),
     url("../fonts/Lato-Light.woff") format("woff"),
@@ -21,7 +43,8 @@
 }
 
 h3 {
-  text-transform: uppercase;
+  font-weight: 600;
+  font-size: 1.125rem;
 }
 
 a {
