@@ -269,13 +269,28 @@
   }
 }
 
+.checkout-product {
+  &__title {
+    background: rgb(56, 103, 155);
+    color: $white;
+    margin-top: .5rem;
+    margin-bottom: .5rem;
+    border: 1px solid $gray;
+    font-size: 1.5rem;
+    padding: 1rem;
+  }
+  &__price {
+    font-size: 1.25rem;
+  }
+}
+
 .checkout-preview {
   h3 {
     color: $skull-gray;
   }
   &__line {
     &.last {
-      border-bottom-color: $skull-gray;
+      border: none;
     }
     .col-5 {
       margin-top: $global-margin / 2;

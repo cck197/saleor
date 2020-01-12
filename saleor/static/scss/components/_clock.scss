@@ -1,20 +1,15 @@
 #clockdiv{
   color: $white;
-  display: inline-block;
   font-weight: 700;
-  text-align: center;
-  font-size: 30px;
-}
-
-#clock__container > p{
-  color: $white;
-  font-weight: 700;
-  font-size: 20px;
+  font-size: 2rem;
 }
 
 #clock__container {
-  padding: 15px 15px 5px;
-  text-align: center;
-  background: rgba(126,91,239,.7)
+  padding: 1rem;
+  background: rgba(126,91,239,.7);
+  p {
+    color: $white;
+    font-weight: 700;
+    font-size: 1.5rem;
+  }
 }
-

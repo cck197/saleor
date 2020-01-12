@@ -1,10 +1,18 @@
 {% load i18n %}
+{% load static %}
 <div class="form-group">
   <input class="form-control" id='cardholder-name' name="cardholder-name" placeholder="Cardholder Name" required/>
+</div><!-- form-group -->
+<div class="form-group d-flex justify-content-center">
+  <img src="{% static "images/credit-cards.png" %}"/>
 </div><!-- form-group -->
 <div class="form-group">
   <div id="card-element" class="stripe" style="padding-top: .55rem;"></div>
 </div><!-- form-group -->
+<div class="form-group d-flex justify-content-center">
+  <svg data-src="{% static "images/shopping-cart-solid.svg" %}" width="20" height="20"/>&nbsp;{% trans "Secure Payment with SSL 128-Bit Encryption" %}
+</div><!-- form-group -->
+<hr/>
 <button id="card-button" class="btn btn-primary btn-block">
   <i class="fa fa-shopping-cart" aria-hidden="true"></i>{% trans "Place Order" context "Payment form primary action" %}
 </button>
@@ -33,7 +41,7 @@ client_token.onchange = function(e) {
       base: {
         iconColor: '#333333',
         color: '#333333',
-        fontFamily: '"Lato", sans-serif',
+        fontFamily: '"Poppins", sans-serif',
         '::placeholder': {
           color: '#d3d1d0',
           fontWeight: 300,

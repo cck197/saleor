@@ -38,7 +38,7 @@
             </div>
             {% else %}
               {% get_country country_code as country %}
-              <p>{% trans "Shipping cost for" context "Checkout shipping cost" %} {{ country.name }}:</p>
+              <p>{% trans "Ship to" context "Checkout shipping cost" %} {{ country.name }}</p>
             {% endif %}
           </div>
         </div>

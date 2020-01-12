@@ -23,66 +23,56 @@
     </div>
   </div>
   <div class="row">
-    <div class="col-md-7 order-md-12">
-      <h3>{% trans "Order Summary" context "Checkout order summary title" %}</h3>
+    <div class="col-md-6 order-md-12">
+      <h3><svg data-src="{% static "images/shopping-cart-solid.svg" %}" width="20" height="20"/> {% trans "Order Summary" context "Checkout order summary title" %}</h3>
       <div class="checkout-preview">
         {% if checkout_lines %}
-          <div class="table__header d-none d-md-block">
-            <div class="row">
-              <div class="col-md-9">
-                <small>{% trans "Product" context "Checkout table header" %}</small>
-              </div>
-              <div class="col-md-3 text-right">
-                <small>{% trans "Price" context "Checkout table header" %}</small>
-              </div>
-            </div>
-          </div>
           {% for line in checkout_lines %}
           <div class="checkout-preview__line{% if forloop.last %} last{% endif %} table__row">
-            <div class="row">
-              <div class="col-9 checkout-preview__line__product">
-                <div class="row">
-                  <div class="col-lg-auto col-sm-auto col-md-auto">
-                    <img class="lazyload lazypreload" data-src="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=90 %}"
-                       data-srcset="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=90 %} 1x, {% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=180 %} 2x"
-                       alt=""/>
-                  </div>
-                  <div class="col-lg-auto col-sm-auto col-md-auto">
-                    <p>
-                      {{ line.variant.product.translated }}
-                      {% get_product_price_features line.variant.product as features %}
-                      {% if features %}
-                        <br/>
-                        <small><b>({{ features|join:", " }})</b></small>
-                      {% endif %}
-                      {% get_product_features line.variant.product as features %}
-                      {% if features %}
-                      <br/>
-                      <small>{{ features|join:"<br/>" }}</small>
-                      {% endif %}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-3">
-                {% with pun=line.variant.get_price pd=line.get_total %}
-                <p class="text-right">
-                  {% if pun != pd %}
-                  <small class="product__info__price__undiscounted">
-                    {% price pun %}
-                  </small>
-                  {% endif %}
-                  {% price pd %}
-                </p>
-                {% endwith %}
-              </div>
+            <div class="checkout-product__title row d-flex justify-content-center">
+              {{ line.variant.product.translated }}
             </div>
+            <div class="checkout-product__price row d-flex justify-content-center">
+              {% with pun=line.variant.get_price pd=line.get_total %}
+              {% if pun != pd %}
+              <small class="product__info__price__undiscounted">
+                {% price pun %}
+              </small> &nbsp;
+              {% endif %}
+              {% price pd %}
+              {% endwith %}
+            </div>
+            <div class="row d-flex justify-content-center">
+              {% get_product_price_features line.variant.product as features %}
+              {% if features %}
+                <br/>
+                <small><b>({{ features|join:", " }})</b></small>
+              {% endif %}
+            </div>
+            <div class="row d-flex justify-content-center">
+                <img class="lazyload lazypreload" data-src="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=180 %}"
+                   data-srcset="{% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=180 %} 1x, {% get_product_image_thumbnail line.variant.get_first_image method="thumbnail" size=360 %} 2x"
+                   alt=""/>
+            </div>
+            {% get_product_features line.variant.product as features %}
+            {% if features %}
+            <div class="row d-flex justify-content-center">
+              You get:
+              <small><ul>
+                {% for feature in features %}
+                <li>{{ feature }}</li>
+                {% endfor %}
+              </small></ul>
+            </div>
+            {% endif %}
           </div>
           {% endfor %}
           {% if cheesy_clock %}
           <div id="clock__container">
-            <p>{% trans "Time Left to Confirm" context "Countdown timer" %}</p>
-						<div id="clockdiv">
+            <div class="row d-flex justify-content-center">
+              <p>{% trans "Time Left to Confirm" context "Countdown timer" %}</p>
+            </div>
+						<div id="clockdiv" class="d-flex justify-content-center">
               <span class="minutes"></span>:<span class="seconds"></span>
 						</div>
           </div>
@@ -94,10 +84,10 @@
         <p class="text-center"><small class="text-muted">60 Day Money Back Guarantee<br/>100% No Questions Asked</small></p>
       </div>
     </div>
-    <div class="col-md-5 order-sm-1">
+    <div class="col-md-6 order-sm-1">
       <form method="POST" id="payment-form" novalidate>
         <input type="hidden" id="gateway" name="gateway" value="Stripe"/>
-        <h3>{% trans "Contact Information" context "Checkout contact information title" %}:</h3>
+        <h3>{% trans "Contact Information" context "Checkout contact information title" %}</h3>
         {% csrf_token %}
         {% bootstrap_field shipping.address_form.first_name show_label=False %}
         {% bootstrap_field shipping.address_form.last_name show_label=False %}
