@@ -158,6 +158,8 @@ def digital_product(request, token: str) -> Union[FileResponse, HttpResponseNotF
 def variant_add_to_checkout(request, slug, variant_id, quantity=1):
     collection = get_object_or_404(Collection, slug=slug)
     request.session["funnel_slug"] = slug
+    if not "funnel_index" in request.session:
+        request.session["funnel_index"] = 0
     variant = get_object_or_404(ProductVariant, pk=variant_id)
     checkout = get_or_create_checkout_from_request(request)
     add_variant_to_checkout(checkout, variant, quantity)
@@ -320,5 +322,7 @@ def funnel_index(request, slug, pk, aslug):
         "json_ld_product_data": json.dumps(
             json_ld_data, default=serialize_decimal, cls=SafeJSONEncoder
         ),
+        "variant_id": product.variants.first().pk,
+        "slug": slug,
     }
     return TemplateResponse(request, "funnel/index.html", ctx)
