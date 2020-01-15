@@ -1,14 +1,22 @@
 {% load i18n %}
 {% load static %}
 <div class="form-group">
-  <input class="form-control" id='cardholder-name' name="cardholder-name" placeholder="Cardholder Name" required/>
-</div><!-- form-group -->
+  <input class="form-control" id="cardholder-name" name="cardholder-name" placeholder="Cardholder Name" required/>
+</div>
 <div class="form-group d-flex justify-content-center">
   <img src="{% static "images/credit-cards.png" %}"/>
 </div><!-- form-group -->
 <div class="form-group">
-  <div id="card-element" class="stripe" style="padding-top: .55rem;"></div>
-</div><!-- form-group -->
+  <div id="card-number"></div>
+</div>
+<div class="form-row">
+  <div class="form-group col-md-6">
+    <div id="card-expiry"></div>
+  </div>
+  <div class="form-group col-md-6">
+    <div id="card-cvc"></div>
+  </div>
+</div>
 <div class="form-group d-flex justify-content-center">
   <svg data-src="{% static "images/lock-solid.svg" %}" width="20" height="20"/>&nbsp;{% trans "Secure Payment with SSL 128-Bit Encryption" %}
 </div><!-- form-group -->
@@ -24,6 +32,11 @@
 {{ form.payment_method_id.as_hidden }}
 
 <script src="https://js.stripe.com/v3/"></script>
+<style>
+.stripe-control {
+  padding-top: 0.55rem;
+}
+</style>
 <script>
 var client_token = document.querySelector('input[name="Stripe"]');
 client_token.onchange = function(e) {
@@ -33,23 +46,40 @@ client_token.onchange = function(e) {
   };
   var elements = stripe.elements(options);
 
-  var cardElement = elements.create('card', {
-    classes: {
-      base: 'form-control',
-    },
-    style: {
-      base: {
-        iconColor: '#333333',
-        color: '#333333',
-        fontFamily: '"Poppins", sans-serif',
-        '::placeholder': {
-          color: '#d3d1d0',
-          fontWeight: 300,
-        },
+  var elementStyles = {
+    base: {
+      iconColor: '#333333',
+      color: '#333333',
+      fontSize: '16px',
+      fontFamily: '"Poppins", sans-serif',
+      '::placeholder': {
+        color: '#d3d1d0',
+        fontWeight: 300,
       },
-    }
+    },
+  };
+
+  var elementClasses = {
+    base: 'form-control stripe-control',
+  };
+
+  var cardExpiry = elements.create('cardExpiry', {
+    classes: elementClasses,
+    style: elementStyles, 
   });
-  cardElement.mount('#card-element');
+  cardExpiry.mount('#card-expiry');
+
+  var cardCvc = elements.create('cardCvc', {
+    classes: elementClasses,
+    style: elementStyles, 
+  });
+  cardCvc.mount('#card-cvc');
+
+  var cardElement = elements.create('cardNumber', {
+    classes: elementClasses,
+    style: elementStyles, 
+  });
+  cardElement.mount('#card-number');
 
   var cardholderName = document.getElementById('cardholder-name');
   var cardButton = document.getElementById('card-button');
