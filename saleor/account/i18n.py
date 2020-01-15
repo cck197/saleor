@@ -91,14 +91,14 @@ class AddressForm(forms.ModelForm):
         model = Address
         exclude = []
         labels = {
-            "first_name": pgettext_lazy("Personal name", "Given name"),
-            "last_name": pgettext_lazy("Personal name", "Family name"),
+            "first_name": pgettext_lazy("Personal name", "First Name *"),
+            "last_name": pgettext_lazy("Personal name", "Last Name *"),
             "company_name": pgettext_lazy(
                 "Company or organization", "Company or organization"
             ),
-            "street_address_1": pgettext_lazy("Address", "Address"),
-            "street_address_2": "",
-            "city": pgettext_lazy("City", "City"),
+            "street_address_1": pgettext_lazy("Address", "Address *"),
+            "street_address_2": pgettext_lazy("Address", "Address 2"),
+            "city": pgettext_lazy("City", "City *"),
             "city_area": pgettext_lazy("City area", "District"),
             "postal_code": pgettext_lazy("Postal code", "Postal code"),
             "country": pgettext_lazy("Country", "Country"),
@@ -107,10 +107,10 @@ class AddressForm(forms.ModelForm):
         }
         placeholders = {
             "street_address_1": pgettext_lazy(
-                "Address", "Street address, P.O. box, company name"
+                "Address", "Address *"
             ),
             "street_address_2": pgettext_lazy(
-                "Address", "Apartment, suite, unit, building, floor, etc"
+                "Address", "Address 2"
             ),
         }
 

@@ -84,7 +84,7 @@ class SignupForm(forms.ModelForm, FormWithReCaptcha):
         widget=forms.PasswordInput, label=pgettext("Password", "Password")
     )
     email = forms.EmailField(
-        label=pgettext("Email", "Email"),
+        label=pgettext("Email", "Email *"),
         error_messages={
             "unique": pgettext_lazy(
                 "Registration error", "This email has already been registered."
@@ -146,9 +146,9 @@ class NameForm(forms.ModelForm):
         fields = ["first_name", "last_name"]
         labels = {
             "first_name": pgettext_lazy(
-                "Customer form: Given name field", "Given name"
+                "Customer form: Given name field", "First Name *"
             ),
             "last_name": pgettext_lazy(
-                "Customer form: Family name field", "Family name"
+                "Customer form: Family name field", "Last Name *"
             ),
         }

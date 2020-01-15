@@ -28,7 +28,7 @@
     <div class="last table__row checkout-preview__delivery-info">
       <div class="row">
         <div class="col-9 checkout-preview__total__subtotal deliveryform" data-csrf="{{ csrf_token }}">
-          <div class="row">
+          <div>
             {% if not single_page %}
             <div class="col-12 col-md-4">
               <p>{% trans "Shipping cost for:" context "Checkout shipping cost form" %}</p>
@@ -38,7 +38,7 @@
             </div>
             {% else %}
               {% get_country country_code as country %}
-              <p>{% trans "Ship to" context "Checkout shipping cost" %} {{ country.name }}</p>
+              <p>Shipping</p>
             {% endif %}
           </div>
         </div>

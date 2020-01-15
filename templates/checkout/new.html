@@ -16,19 +16,18 @@
 {% endblock meta_tags %}
 
 {% block content %}
-<div class="container pb-5 pr-0 pl-0">
-  <div class="row">
-    <div class="col-4 p-3">
-      <img class="cart-logo img-fluid" src="{% static "images/logo-ks.png" %}"/>
+<div class="container pb-5 pr-0 pl-0" id="checkoutContentContainer">
+  <div class="row" id="checkoutContentRow">
+    <div class="col-12 p-0 d-md-none" id="checkoutMobileHeader">
+      <img class="mobile-cart-logo img-fluid d-sm-none" src="{% static "images/keto-fs-top-image-499-max-redesign.jpg" %}"/>
+      <img class="tablet-cart-logo img-fluid d-none d-sm-block d-md-none" src="{% static "images/keto-fs-top-image-500-min-768-max-redesign.jpg" %}"/>
     </div>
-  </div>
-  <div class="row">
-    <div class="col-md-6 order-md-12">
-      <h3><svg data-src="{% static "images/shopping-cart-solid.svg" %}" width="20" height="20"/> {% trans "Order Summary" context "Checkout order summary title" %}</h3>
+    <div class="col-md-5 order-md-2" id ="timerAndOrderSummaryContainer">
+      <h3 class="d-none d-md-block"><svg data-src="{% static "images/shopping-cart-solid.svg" %}" width="20" height="20"/> {% trans "Order Summary" context "Checkout order summary title" %}</h3>
       <div class="checkout-preview">
         {% if checkout_lines %}
           {% for line in checkout_lines %}
-          <div class="checkout-preview__line{% if forloop.last %} last{% endif %} table__row">
+          <div class="checkout-preview__line{% if forloop.last %} last{% endif %} table__row d-none d-md-block">
             <div class="checkout-product__title row d-flex justify-content-center">
               {{ line.variant.product.translated }}
             </div>
@@ -69,10 +68,10 @@
           {% endfor %}
           {% if cheesy_clock %}
           <div id="clock__container">
-            <div class="row d-flex justify-content-center">
-              <p>{% trans "Time Left to Confirm" context "Countdown timer" %}</p>
+            <div class="d-flex justify-content-center text-center">
+              <p>{% trans "Your Keto Cookbook has been reserved for the next 15 minutes. Time remaining:" context "Countdown timer" %}</p>
             </div>
-						<div id="clockdiv" class="d-flex justify-content-center">
+						<div id="clockdiv" class="d-flex justify-content-center text-center">
               <span class="minutes"></span>:<span class="seconds"></span>
 						</div>
           </div>
@@ -84,7 +83,8 @@
         <p class="text-center"><small class="text-muted">60 Day Money Back Guarantee<br/>100% No Questions Asked</small></p>
       </div>
     </div>
-    <div class="col-md-6 order-sm-1">
+    <div class="col-md-7 order-sm-1 checkout-form-container">
+      <img class="cart-logo img-fluid d-none d-md-block" src="{% static "images/logo-ks.png" %}"/>
       <form method="POST" id="payment-form" novalidate>
         <input type="hidden" id="gateway" name="gateway" value="Stripe"/>
         <h3>{% trans "Contact Information" context "Checkout contact information title" %}</h3>
@@ -102,19 +102,27 @@
         </button>
         {% else %}
         <hr/>
-        <h3>{% trans "Payment Information" context "Checkout payment information title" %}</h3>
+        <h3>{% trans "Payment Method" context "Checkout payment information title" %}</h3>
 				<ul class="nav nav-tabs col-lg-10 m-auto" role="tablist">
           {% if Stripe %}
-					<li class="nav-item">
+					<li class="nav-item nav-credit-card">
 						<a class="nav-link active" data-toggle="tab" href="#card" role="tab" aria-selected="true">
-							<h3>Credit Card</h3>
+                <i class="fa fa-cc-amex"></i>
+                <i class="fa fa-cc-mastercard"></i>
+                <i class="fa fa-cc-discover"></i>
+                <i class="fa fa-cc-visa"></i>
+                <img class="svg-cc-icons" src="{% static "images/cc-icons-ae.svg" %}">
+                <img class="svg-cc-icons" src="{% static "images/cc-icons-mc.svg" %}">
+                <img class="svg-cc-icons" src="{% static "images/cc-icons-dc.svg" %}">
+                <img class="svg-cc-icons" src="{% static "images/cc-icons-vs.svg" %}">
+        </a>
 						</a>
 					</li>
           {% endif %}
           {% if Braintree %}
 					<li class="nav-item">
-						<a class="nav-link" data-toggle="tab" href="#paypal" role="tab" aria-selected="false">
-							<h3>PayPal</h3>
+						<a class="nav-link paypal" data-toggle="tab" href="#paypal" role="tab" aria-selected="false">
+              <img class="svg-cc-icons" src="{% static "images/paypal.svg" %}">
 						</a>
 					</li>
           {% endif %}
@@ -139,6 +147,7 @@
           {% endif %}
 				</div>
         {% endif %}
+        <h3 id="securePaymentReassurance">Secure Payment with SSL 128-Bit Encryption</h3>
       </form>
     </div>
   </div>

@@ -74,8 +74,11 @@
   }
 }
 
+/** Jeremy - Commented out 2020-01-15 **/
+/**
 .maincontent {
   @include media-breakpoint-down(sm) {
     margin-top: $global-margin * 7;
   }
 }
+**/
