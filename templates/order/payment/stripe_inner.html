@@ -1,10 +1,7 @@
 {% load i18n %}
 {% load static %}
 <div class="form-group">
-  <input class="form-control" id="cardholder-name" name="cardholder-name" placeholder="Cardholder Name" required/>
-</div>
-<div class="form-group d-flex justify-content-center">
-  <img src="{% static "images/credit-cards.png" %}"/>
+  <input class="form-control" id="cardholder-name" name="cardholder-name" placeholder="Name on Card" required/>
 </div><!-- form-group -->
 <div class="form-group">
   <div id="card-number"></div>
@@ -17,9 +14,6 @@
     <div id="card-cvc"></div>
   </div>
 </div>
-<div class="form-group d-flex justify-content-center">
-  <svg data-src="{% static "images/lock-solid.svg" %}" width="20" height="20"/>&nbsp;{% trans "Secure Payment with SSL 128-Bit Encryption" %}
-</div><!-- form-group -->
 <hr/>
 <button id="card-button" class="btn btn-primary btn-block">
   <i class="fa fa-shopping-cart" aria-hidden="true"></i>{% trans "Place Order" context "Payment form primary action" %}
