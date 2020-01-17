@@ -69,6 +69,13 @@ module.exports = (_, argv) => {
           loader: 'babel-loader'
         },
         {
+					test: require.resolve('jquery'),
+					use: [{
+							loader: 'expose-loader',
+							options: '$'
+					}]
+        },
+        {
           test: /\.scss$/,
           use: [
             MiniCssExtractPlugin.loader,
