@@ -33,6 +33,7 @@
               {{ line.variant.product.translated }}
             </div>
             <div class="checkout-product__price row d-flex justify-content-center">
+              {% trans "Price" context "Order summary sidebar" %}:&nbsp;
               {% with pun=line.variant.get_price pd=line.get_total %}
               {% if pun != pd %}
               <small class="product__info__price__undiscounted">
@@ -41,6 +42,10 @@
               {% endif %}
               {% price pd %}
               {% endwith %}
+            </div>
+            <div class="checkout-product__price row d-flex justify-content-center">
+              {% trans "Shipping Cost" context "Order summary sidebar" %}:&nbsp;
+              {% price shipping_price_range.start %}
             </div>
             <div class="row d-flex justify-content-center">
               {% get_product_price_features line.variant.product as features %}
