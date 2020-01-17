@@ -1,0 +1,174 @@
+{% load i18n %}
+{% csrf_token %}
+<input type="hidden" id="client_token_braintree_credit_card" class="client_token" name="Braintree" data-action="{% url 'order:client-token' 'Braintree'  %}"/>
+<div class="form-group">
+  <input class="form-control" id="cardholder-name" name="cardholder-name" placeholder="Name on card" required/>
+</div>
+<div class="form-group">
+  <div class="form-control" id="card-number"></div>
+</div>
+<div class="form-row">
+  <div class="form-group col-md-6">
+    <div class="form-control" id="card-expiry"></div>
+  </div>
+  <div class="form-group col-md-6">
+    <div class="form-control" id="card-cvc"></div>
+  </div>
+</div>
+<button id="card-button" class="btn btn-primary btn-block">
+  <i class="fa fa-shopping-cart" aria-hidden="true"></i>{% trans "Place Order" context "Payment form primary action" %}
+</button>
+
+<script src="https://js.braintreegateway.com/web/3.56.0/js/client.min.js"></script>
+<!-- Load Hosted Fields component. -->
+<script src="https://js.braintreegateway.com/web/3.56.0/js/hosted-fields.min.js"></script>
+<script>
+	var form = document.querySelector('#payment-form');
+  var cardButton = document.querySelector('#card-button');
+  var cardholderName = document.querySelector('#cardholder-name');
+  var nonce = document.querySelector('#nonce');
+  var client_token = document.querySelector('#client_token_braintree_credit_card');
+  client_token.onchange = function(e) {
+    braintree.client.create({
+      authorization: e.target.value
+    }, function (clientErr, clientInstance) {
+      if (clientErr) {
+        console.error('Error creating client:', clientErr);
+        return;
+      }
+
+      braintree.hostedFields.create({
+        client: clientInstance,
+        styles: {
+          input: {
+            'font-size': '1rem',
+            'color': '#333',
+          },
+          '::-webkit-input-placeholder': {
+            'color': '#aaa',
+          },
+          ':-moz-placeholder': {
+            'color': '#aaa',
+          },
+          '::-moz-placeholder': {
+            'color': '#aaa',
+          },       
+          ':-ms-input-placeholder': {
+            'color': '#aaa',
+          },
+        },
+				fields: {
+					number: {
+						selector: '#card-number',
+            placeholder: 'Credit card number',
+					},
+					cvv: {
+						selector: '#card-cvc',
+            placeholder: 'CVV code',
+					},
+					expirationDate: {
+						selector: '#card-expiry',
+            placeholder: 'Expiration MM / YY',
+					}
+				}
+      }, function (err, hostedFieldsInstance) {
+				function createInputChangeEventListener(element) {
+					return function () {
+						validateInput(element);
+					}
+				}
+				function setValidityClasses(element, validity) {
+					if (validity) {
+						element.removeClass('is-invalid');
+						element.addClass('is-valid');  
+					} else {
+						element.addClass('is-invalid');
+						element.removeClass('is-valid');  
+					}    
+				}
+
+				function validateInput(element, parent=false) {
+					// very basic validation, if the
+					// fields are empty, mark them
+					// as invalid, if not, mark them
+					// as valid
+          var e = $(element);
+
+					if (!e.val().trim()) {
+						setValidityClasses(e, false);
+            if (parent) {
+						  setValidityClasses(e.parent(), false);
+            }
+						return false;
+					}
+
+					setValidityClasses(e, true);
+          if (parent) {
+            setValidityClasses(e.parent(), true);
+          }
+					return true;
+				}
+
+				cardholderName.onchange = function() {
+					validateInput(cardholderName, true);
+				};
+
+				hostedFieldsInstance.on('validityChange', function(event) {
+					var field = event.fields[event.emittedBy];
+
+					// Remove any previously applied error or warning classes
+					$(field.container).removeClass('is-valid');
+					$(field.container).removeClass('is-invalid');
+
+					if (field.isValid) {
+						$(field.container).addClass('is-valid');
+					} else if (field.isPotentiallyValid) {
+						// skip adding classes if the field is
+						// not valid, but is potentially valid
+					} else {
+						$(field.container).addClass('is-invalid');
+					}
+				});
+
+        cardButton.addEventListener('click', function(ev) {
+          ev.preventDefault();
+
+					var formIsInvalid = false;
+					var state = hostedFieldsInstance.getState();
+
+					// perform validations on the non-Hosted Fields
+					// inputs
+					if (!validateInput(cardholderName, true)) {
+						formIsInvalid = true;
+					}
+
+					// Loop through the Hosted Fields and check
+					// for validity, apply the is-invalid class
+					// to the field container if invalid
+					Object.keys(state.fields).forEach(function(field) {
+						if (!state.fields[field].isValid) {
+							$(state.fields[field].container).addClass('is-invalid');
+							formIsInvalid = true;
+						}
+					});
+
+					if (formIsInvalid) {
+						// skip tokenization request if any fields are invalid
+						return;
+					}
+
+          hostedFieldsInstance.tokenize({
+            cardholderName: cardholderName.value,
+          }, function(err, payload) {
+            if (err) {
+              console.error(err);
+            } else {
+              nonce.value = payload.nonce;
+              form.submit();
+            }
+          });
+        });
+      });
+    });
+  };
+</script>

@@ -1,5 +1,6 @@
 {% extends "base_new.html" %}
 {% load i18n %}
+{% load l10n %}
 {% load get_product_image_thumbnail from product_images %}
 {% load price from taxed_prices %}
 {% load static %}
@@ -56,7 +57,7 @@
             {% get_product_features line.variant.product as features %}
             {% if features %}
             <div class="row d-flex justify-content-center">
-              You get:
+              {% trans "You get" context "Product features" %}:
               <small><ul>
                 {% for feature in features %}
                 <li>{{ feature }}</li>
@@ -69,7 +70,7 @@
           {% if cheesy_clock %}
           <div id="clock__container">
             <div class="d-flex justify-content-center text-center">
-              <p>{% trans "Your Keto Cookbook has been reserved for the next 15 minutes. Time remaining:" context "Countdown timer" %}</p>
+              <p>{% trans "Your" context "Countdown timer" %} {{ checkout_lines.0.variant.product.translated }} {% trans "has been reserved for the next 15 minutes. Time remaining:" context "Countdown timer" %}</p>
             </div>
 						<div id="clockdiv" class="d-flex justify-content-center text-center">
               <span class="minutes"></span>:<span class="seconds"></span>
@@ -86,7 +87,6 @@
     <div class="col-md-7 order-sm-1 checkout-form-container">
       <img class="cart-logo img-fluid d-none d-md-block" src="{% static "images/logo-ks.png" %}"/>
       <form method="POST" id="payment-form" novalidate>
-        <input type="hidden" id="gateway" name="gateway" value="Stripe"/>
         <h3>{% trans "Contact Information" context "Checkout contact information title" %}</h3>
         {% csrf_token %}
         {% bootstrap_field shipping.address_form.first_name show_label=False %}
@@ -104,7 +104,6 @@
         <hr/>
         <h3>{% trans "Payment Method" context "Checkout payment information title" %}</h3>
 				<ul class="nav nav-tabs col-lg-10 m-auto" role="tablist">
-          {% if Stripe %}
 					<li class="nav-item nav-credit-card">
 						<a class="nav-link active" data-toggle="tab" href="#card" role="tab" aria-selected="true">
                 <i class="fa fa-cc-amex"></i>
@@ -115,36 +114,31 @@
                 <img class="svg-cc-icons" src="{% static "images/cc-icons-mc.svg" %}">
                 <img class="svg-cc-icons" src="{% static "images/cc-icons-dc.svg" %}">
                 <img class="svg-cc-icons" src="{% static "images/cc-icons-vs.svg" %}">
-        </a>
 						</a>
 					</li>
-          {% endif %}
-          {% if Braintree %}
 					<li class="nav-item">
 						<a class="nav-link paypal" data-toggle="tab" href="#paypal" role="tab" aria-selected="false">
               <img class="svg-cc-icons" src="{% static "images/paypal.svg" %}">
 						</a>
 					</li>
-          {% endif %}
 				</ul>
+        <input type="hidden" name="gateway" value="Braintree"/>
+        <input type="hidden" id="nonce" name="payment_method_nonce"/>
+        <input type="hidden" id="amount" name="amount" value="{% localize off %}{{ Braintree.payment.total }}{% endlocalize %}"/>
 				<div class="tab-content">
-          {% if Stripe %}
 					<div class="tab-pane fade active show" id="card" role="tabpanel">
 						<div class="m-auto">
-              {% include 'order/payment/stripe_inner.html' with form=Stripe.form payment=Stripe.payment client_token=Stripe.client_token order=order %}
+              {% include 'order/payment/braintree_inner.html' with form=Braintree.form payment=Braintree.payment order=order %}
 						</div>
 					</div>
-          {% endif %}
-          {% if Braintree %}
 					<div class="tab-pane fade" id="paypal" role="tabpanel">
 						<div class="m-auto">
 							<div class="alert alert-danger">
 								<span contenteditable="true">An approval dialog box will appear for secure PayPal payment</span>
 							</div>
-              {% include 'order/payment/paypal.html' with form=Braintree.form payment=Braintree.payment client_token=Braintree.client_token order=order %}
+              {% include 'order/payment/paypal.html' with form=Braintree.form payment=Braintree.payment order=order %}
 						</div>
 					</div>
-          {% endif %}
 				</div>
         {% endif %}
         <h3 id="securePaymentReassurance">Secure Payment with SSL 128-Bit Encryption</h3>

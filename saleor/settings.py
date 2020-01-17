@@ -140,6 +140,10 @@ EMAIL_ORDER_CONF_DELAY = env("EMAIL_ORDER_CONF_DELAY", default=60)
 
 ENABLE_SSL = env("ENABLE_SSL", default=False)
 
+PAYMENT_GATEWAYS = get_list(
+    env("PAYMENT_GATEWAYS", default="Braintree")#,Stripe")
+)
+
 if ENABLE_SSL:
     SECURE_SSL_REDIRECT = not DEBUG
 

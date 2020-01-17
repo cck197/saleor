@@ -367,7 +367,7 @@ def checkout_index_new(request, checkout):
         if not order.is_fully_paid():
             ctx[gateway] = response.context_data
     else:
-        for gateway in ["Stripe", "Braintree"]:  # TODO config
+        for gateway in settings.PAYMENT_GATEWAYS:
             response = start_payment(request, order=order, gateway=gateway)
             ctx[gateway] = response.context_data
     if (
