@@ -342,6 +342,12 @@ class Product(SeoModel, ModelWithMetadata, PublishableModel):
         images = list(self.images.all())
         return images[0] if images else None
 
+    def get_image(self, alt):
+        try:
+            return self.images.filter(alt=alt).first().image.url
+        except AttributeError:
+            return None
+
     def get_price_range(self, discounts: Iterable[DiscountInfo] = None):
         if self.variants.all():
             prices = [variant.get_price(discounts) for variant in self]

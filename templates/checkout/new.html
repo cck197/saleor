@@ -1,7 +1,7 @@
 {% extends "base_new.html" %}
 {% load i18n %}
 {% load l10n %}
-{% load get_product_image_thumbnail from product_images %}
+{% load get_product_image get_product_image_thumbnail from product_images %}
 {% load price from taxed_prices %}
 {% load static %}
 {% load bootstrap_form from bootstrap4 %}
@@ -17,11 +17,12 @@
 {% endblock meta_tags %}
 
 {% block content %}
+{% with product=checkout_lines.0.variant.product %}
 <div class="container pb-5 pr-0 pl-0" id="checkoutContentContainer">
   <div class="row" id="checkoutContentRow">
     <div class="col-12 p-0 d-md-none" id="checkoutMobileHeader">
-      <img class="mobile-cart-logo img-fluid d-sm-none" src="{% static "images/keto-fs-top-image-499-max-redesign.jpg" %}"/>
-      <img class="tablet-cart-logo img-fluid d-none d-sm-block d-md-none" src="{% static "images/keto-fs-top-image-500-min-768-max-redesign.jpg" %}"/>
+      <img class="mobile-cart-logo img-fluid d-sm-none" src="{% get_product_image product "mobile-cart-logo" %}"/>
+      <img class="tablet-cart-logo img-fluid d-none d-sm-block d-md-none" src="{% get_product_image product "tablet-cart-logo" %}"/>
     </div>
     <div class="col-md-5 order-md-2" id ="timerAndOrderSummaryContainer">
       <h3 class="d-none d-md-block"><svg data-src="{% static "images/shopping-cart-solid.svg" %}" width="20" height="20"/> {% trans "Order Summary" context "Checkout order summary title" %}</h3>
@@ -75,7 +76,7 @@
           {% if cheesy_clock %}
           <div id="clock__container">
             <div class="d-flex justify-content-center text-center">
-              <p>{% trans "Your" context "Countdown timer" %} {{ checkout_lines.0.variant.product.translated }} {% trans "has been reserved for the next 15 minutes. Time remaining:" context "Countdown timer" %}</p>
+              <p>{% trans "Your" context "Countdown timer" %} {{ product.translated }} {% trans "has been reserved for the next 15 minutes. Time remaining:" context "Countdown timer" %}</p>
             </div>
 						<div id="clockdiv" class="d-flex justify-content-center text-center">
               <span class="minutes"></span>:<span class="seconds"></span>
@@ -151,4 +152,5 @@
     </div>
   </div>
 </div>
+{% endwith %} <!-- product -->
 {% endblock %}
