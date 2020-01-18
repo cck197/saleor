@@ -163,7 +163,10 @@ def variant_add_to_checkout(request, slug, variant_id, quantity=1):
     variant = get_object_or_404(ProductVariant, pk=variant_id)
     checkout = get_or_create_checkout_from_request(request)
     add_variant_to_checkout(checkout, variant, quantity)
-    return redirect(reverse("checkout:index"))
+    response = redirect(reverse("checkout:index"))
+    if not request.user.is_authenticated:
+        set_checkout_cookie(checkout, response)
+    return response
 
 
 def product_add_to_checkout(request, slug, product_id):
