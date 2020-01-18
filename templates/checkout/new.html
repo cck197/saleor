@@ -10,7 +10,7 @@
 {% load get_product_price_features from product_attr %}
 
 {% block shipping_options %}{% url 'checkout:shipping-options-single' %}{% endblock %}
-{% block title %}{% trans "Last Step - Get Your..." context "Checkout page title" %} {{ checkout_lines.0.variant.product.translated }} — {{ block.super }}{% endblock %}
+{% block title %}{% trans "Last Step - Get Your" context "Checkout page title" %} {{ checkout_lines.0.variant.product.translated }}{% endblock %}
 
 {% block meta_tags %}
   <meta name="robots" content="nofollow">
@@ -133,7 +133,7 @@
 				<div class="tab-content">
 					<div class="tab-pane fade active show" id="card" role="tabpanel">
 						<div class="m-auto">
-              {% include 'order/payment/braintree_inner.html' with form=Braintree.form payment=Braintree.payment order=order %}
+              {% include 'order/payment/braintree_inner.html' with form=Braintree.form payment=Braintree.payment order=Braintree.order %}
 						</div>
 					</div>
 					<div class="tab-pane fade" id="paypal" role="tabpanel">
@@ -141,7 +141,7 @@
 							<div class="alert alert-danger">
 								<span contenteditable="true">An approval dialog box will appear for secure PayPal payment</span>
 							</div>
-              {% include 'order/payment/paypal.html' with form=Braintree.form payment=Braintree.payment order=order %}
+              {% include 'order/payment/paypal.html' with form=Braintree.form payment=Braintree.payment order=Braintree.order %}
 						</div>
 					</div>
 				</div>

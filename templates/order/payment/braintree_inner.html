@@ -28,6 +28,8 @@
   var cardholderName = document.querySelector('#cardholder-name');
   var nonce = document.querySelector('#nonce');
   var client_token = document.querySelector('#client_token_braintree_credit_card');
+  var postalCode = document.querySelector('#id_postal_code');
+  var streetAddress = document.querySelector('#id_street_address_1');
   client_token.onchange = function(e) {
     braintree.client.create({
       authorization: e.target.value
@@ -158,7 +160,9 @@
 					}
 
           hostedFieldsInstance.tokenize({
-            cardholderName: cardholderName.value,
+            'cardholderName': cardholderName.value,
+            'billingAddress.postalCode': postalCode.value,
+            'billingAddress.streetAddress': streetAddress.value,
           }, function(err, payload) {
             if (err) {
               console.error(err);
