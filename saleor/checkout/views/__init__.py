@@ -1,4 +1,5 @@
 """Checkout related views."""
+import logging
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -44,6 +45,9 @@ from .validators import (
 from ...core import analytics
 from ...payment.gateway import process_payment
 from ...payment.utils import create_payment
+
+
+logger = logging.getLogger(__name__)
 
 
 @get_or_empty_db_checkout(Checkout.objects.for_display())
@@ -305,6 +309,9 @@ def checkout_index_new(request, checkout):
     ctx.update({"shipping": response.context_data, "cheesy_clock": True})
     country_code = ctx["shipping"]["address_form"].initial["country"]
     country_form = CountryForm(initial={"country": country_code})
+    errors = country_form.errors
+    if errors:
+        logger.info(f"checkout: country_form.errors: {dict(errors)}")
     shipping_price_range = get_shipping_price_estimate(
         checkout, discounts, country_code=country_code
     )
@@ -327,6 +334,10 @@ def checkout_index_new(request, checkout):
     )
     response = anonymous_user_shipping_address_view(request, checkout)
     ctx.update({"shipping": response.context_data})
+    for key in ("user_form", "address_form",):
+        errors = ctx["shipping"][key].errors
+        if errors:
+            logger.info(f"checkout: {key}.form.errors: {dict(errors)}")
     checkout.refresh_from_db()
     # response = checkout_shipping_method(request)
     # ctx.update({"shipping_method": response.context_data})
@@ -366,6 +377,9 @@ def checkout_index_new(request, checkout):
             response = start_payment(request, token=order.token, gateway=gateway)
         if not order.is_fully_paid():
             ctx[gateway] = response.context_data
+            errors = ctx[gateway]["form"].errors
+            if errors:
+                logger.info(f"checkout: {gateway}.form.errors: {dict(errors)}")
     else:
         for gateway in settings.PAYMENT_GATEWAYS:
             response = start_payment(request, order=order, gateway=gateway)

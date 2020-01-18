@@ -10,19 +10,18 @@
 {% load get_product_price_features from product_attr %}
 
 {% block shipping_options %}{% url 'checkout:shipping-options-single' %}{% endblock %}
-{% block title %}{% trans "Last Step - Get Your..." context "Checkout page title" %} — {{ block.super }}{% endblock %}
+{% block title %}{% trans "Last Step - Get Your..." context "Checkout page title" %} {{ checkout_lines.0.variant.product.translated }} — {{ block.super }}{% endblock %}
 
 {% block meta_tags %}
   <meta name="robots" content="nofollow">
 {% endblock meta_tags %}
 
 {% block content %}
-{% with product=checkout_lines.0.variant.product %}
 <div class="container pb-5 pr-0 pl-0" id="checkoutContentContainer">
   <div class="row" id="checkoutContentRow">
     <div class="col-12 p-0 d-md-none" id="checkoutMobileHeader">
-      <img class="mobile-cart-logo img-fluid d-sm-none" src="{% get_product_image product "mobile-cart-logo" %}"/>
-      <img class="tablet-cart-logo img-fluid d-none d-sm-block d-md-none" src="{% get_product_image product "tablet-cart-logo" %}"/>
+      <img class="mobile-cart-logo img-fluid d-sm-none" src="{% get_product_image checkout_lines.0.variant.product "mobile-cart-logo" %}"/>
+      <img class="tablet-cart-logo img-fluid d-none d-sm-block d-md-none" src="{% get_product_image checkout_lines.0.variant.product "tablet-cart-logo" %}"/>
     </div>
     <div class="col-md-5 order-md-2" id ="timerAndOrderSummaryContainer">
       <h3 class="d-none d-md-block"><svg data-src="{% static "images/shopping-cart-solid.svg" %}" width="20" height="20"/> {% trans "Order Summary" context "Checkout order summary title" %}</h3>
@@ -76,7 +75,7 @@
           {% if cheesy_clock %}
           <div id="clock__container">
             <div class="d-flex justify-content-center text-center">
-              <p>{% trans "Your" context "Countdown timer" %} {{ product.translated }} {% trans "has been reserved for the next 15 minutes. Time remaining:" context "Countdown timer" %}</p>
+              <p>{% trans "Your" context "Countdown timer" %} {{ checkout_lines.0.variant.product.translated }} {% trans "has been reserved for the next 15 minutes. Time remaining:" context "Countdown timer" %}</p>
             </div>
 						<div id="clockdiv" class="d-flex justify-content-center text-center">
               <span class="minutes"></span>:<span class="seconds"></span>
@@ -102,6 +101,7 @@
         <h3>{% trans "Shipping Information" context "Checkout shipping information title" %}</h3>
         {% include "account/snippets/address_form_single.html" with address_form=shipping.address_form only %}
 
+        <input type="hidden" name="gateway" value="Braintree"/>
         {% if not Stripe and not Braintree  %}
         <button type="submit" id="card-button" class="btn btn-primary btn-block">
           {% trans "Place Order" context "Payment form primary action" %}
@@ -128,7 +128,6 @@
 						</a>
 					</li>
 				</ul>
-        <input type="hidden" name="gateway" value="Braintree"/>
         <input type="hidden" id="nonce" name="payment_method_nonce"/>
         <input type="hidden" id="amount" name="amount" value="{% localize off %}{{ Braintree.payment.total }}{% endlocalize %}"/>
 				<div class="tab-content">
@@ -152,5 +151,4 @@
     </div>
   </div>
 </div>
-{% endwith %} <!-- product -->
 {% endblock %}
