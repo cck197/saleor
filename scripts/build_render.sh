@@ -5,4 +5,5 @@ python manage.py migrate
 unset NODE_ENV
 npm install
 npm run build-assets
+npm run build-emails
 python manage.py collectstatic --no-input
