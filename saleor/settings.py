@@ -138,6 +138,8 @@ EMAIL_USE_SSL = email_config["EMAIL_USE_SSL"]
 
 EMAIL_ORDER_CONF_DELAY = env("EMAIL_ORDER_CONF_DELAY", default=60)
 
+ENABLE_FUNNEL_REDIRECT = env("ENABLE_FUNNEL_REDIRECT", default=False)
+
 ENABLE_SSL = env("ENABLE_SSL", default=False)
 
 PAYMENT_GATEWAYS = get_list(
