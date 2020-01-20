@@ -15,11 +15,18 @@ class BraintreePaymentForm(forms.Form):
     # as it's values should be hardcoded to simulate each payment gateway
     # response
     payment_method_nonce = forms.CharField()
+    env = forms.CharField(widget=forms.HiddenInput(), required=False)
 
     def __init__(self, payment_information: PaymentData, *args, **kwargs):
+        config = kwargs.pop("config")
         super().__init__(*args, **kwargs)
         self.payment_information = payment_information
         self.fields["amount"].initial = payment_information.amount
+        self.fields["env"].initial = (
+            "sandbox"
+            if config.connection_params["sandbox_mode"]
+            else "production"
+        )
 
     def clean(self):
         cleaned_data = super().clean()

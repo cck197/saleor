@@ -1,6 +1,7 @@
 {% csrf_token %}
 <input type="hidden" id="client_token_braintree_paypal" class="client_token" name="Braintree" data-action="{% url 'order:client-token' 'Braintree'  %}"/>
 <div id="paypal-button"></div>
+{{ form.env }}
 
 <!-- Load PayPal's checkout.js Library. -->
 <script src="https://www.paypalobjects.com/api/checkout.js" data-version-4 log-level="warn"></script>
@@ -14,6 +15,7 @@
   var form = document.querySelector('#payment-form');
   var client_token = document.querySelector('#client_token_braintree_paypal');
   var nonce = document.querySelector('#nonce');
+  var env = document.querySelector('#id_env');
   client_token.onchange = function(e) {
     braintree.client.create({
       authorization: e.target.value
@@ -43,7 +45,7 @@
         // Set up PayPal with the checkout.js library
         // https://developer.paypal.com/docs/archive/checkout/how-to/customize-button/#button-styles
         paypal.Button.render({
-          env: 'sandbox', // or 'production'
+          env: env.value, // sandbox or production
           style: {
             size: 'responsive',
             shape: 'rect',

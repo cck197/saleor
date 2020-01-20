@@ -203,7 +203,7 @@ class BraintreeGatewayPlugin(BasePlugin):
     def create_form(
         self, data, payment_information: "PaymentData", previous_value
     ) -> "forms.Form":
-        return create_form(data, payment_information)
+        return create_form(data, payment_information, self.config)
 
     @require_active_plugin
     def get_client_token(self, token_config: "TokenConfig", previous_value):

@@ -90,8 +90,10 @@ def extract_gateway_response(braintree_result) -> Dict:
     }
 
 
-def create_form(data, payment_information):
-    return BraintreePaymentForm(data=data, payment_information=payment_information)
+def create_form(data, payment_information, config):
+    return BraintreePaymentForm(
+        data=data, payment_information=payment_information, config=config
+    )
 
 
 def get_braintree_gateway(sandbox_mode, merchant_id, public_key, private_key):
