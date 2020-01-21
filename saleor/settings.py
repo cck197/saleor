@@ -137,14 +137,13 @@ EMAIL_USE_TLS = email_config["EMAIL_USE_TLS"]
 EMAIL_USE_SSL = email_config["EMAIL_USE_SSL"]
 
 EMAIL_ORDER_CONF_DELAY = env("EMAIL_ORDER_CONF_DELAY", default=60)
+EMAIL_SEND_PAYMENT_CONF_EMAIL = env("EMAIL_SEND_PAYMENT_CONF_EMAIL", default=False)
 
 ENABLE_FUNNEL_REDIRECT = env("ENABLE_FUNNEL_REDIRECT", default=False)
 
 ENABLE_SSL = env("ENABLE_SSL", default=False)
 
-PAYMENT_GATEWAYS = get_list(
-    env("PAYMENT_GATEWAYS", default="Braintree")#,Stripe")
-)
+PAYMENT_GATEWAYS = get_list(env("PAYMENT_GATEWAYS", default="Braintree"))  # ,Stripe")
 
 if ENABLE_SSL:
     SECURE_SSL_REDIRECT = not DEBUG
@@ -226,10 +225,10 @@ MIDDLEWARE = [
     "saleor.core.middleware.currency",
     "saleor.core.middleware.site",
     "saleor.core.middleware.extensions",
-    #"social_django.middleware.SocialAuthExceptionMiddleware",
-    #"impersonate.middleware.ImpersonateMiddleware",
-    #"saleor.graphql.middleware.jwt_middleware",
-    #"saleor.graphql.middleware.service_account_middleware",
+    # "social_django.middleware.SocialAuthExceptionMiddleware",
+    # "impersonate.middleware.ImpersonateMiddleware",
+    # "saleor.graphql.middleware.jwt_middleware",
+    # "saleor.graphql.middleware.service_account_middleware",
 ]
 
 INSTALLED_APPS = [
@@ -285,11 +284,10 @@ INSTALLED_APPS = [
 ]
 ENABLE_CACHALOT = env("ENABLE_CACHALOT", default=True)
 if ENABLE_CACHALOT:
-    INSTALLED_APPS += ["cachalot",]
+    INSTALLED_APPS += ["cachalot"]
     SILENCED_SYSTEM_CHECKS = ["cachalot.E003"]
 if DEBUG:
-    INSTALLED_APPS += ["django_extensions",]
-
+    INSTALLED_APPS += ["django_extensions"]
 
 
 ENABLE_DEBUG_TOOLBAR = env("ENABLE_DEBUG_TOOLBAR", default=False)
@@ -317,7 +315,7 @@ if ENABLE_DEBUG_TOOLBAR:
         "debug_toolbar.panels.profiling.ProfilingPanel",
     ]
     if ENABLE_CACHALOT:
-        DEBUG_TOOLBAR_PANELS += ["cachalot.panels.CachalotPanel",]
+        DEBUG_TOOLBAR_PANELS += ["cachalot.panels.CachalotPanel"]
     DEBUG_TOOLBAR_CONFIG = {"RESULTS_CACHE_SIZE": 100}
 
 ENABLE_SILK = env("ENABLE_SILK", default=False)
@@ -463,8 +461,7 @@ bootstrap4 = {
 TEST_RUNNER = "tests.runner.PytestTestRunner"
 
 ALLOWED_HOSTS = env.list(
-    "ALLOWED_HOSTS",
-    default=[env("RENDER_EXTERNAL_HOSTNAME", default="")],
+    "ALLOWED_HOSTS", default=[env("RENDER_EXTERNAL_HOSTNAME", default="")]
 )
 ALLOWED_GRAPHQL_ORIGINS = env("ALLOWED_GRAPHQL_ORIGINS", default="*")
 
@@ -592,9 +589,7 @@ SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {"fields": "id, email"}
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 
 # CELERY SETTINGS
-CELERY_BROKER_URL = (
-    env("CELERY_BROKER_URL", default=env("REDIS_URL", default="")) or ""
-)
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default=env("REDIS_URL", default="")) or ""
 CELERY_TASK_ALWAYS_EAGER = not CELERY_BROKER_URL
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"

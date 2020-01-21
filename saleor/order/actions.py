@@ -2,6 +2,7 @@ import logging
 from decimal import Decimal
 from typing import TYPE_CHECKING, List
 
+from django.conf import settings
 from django.db import transaction
 from django.utils.translation import pgettext_lazy
 
@@ -41,7 +42,8 @@ def handle_fully_paid_order(order: "Order"):
         events.email_sent_event(
             order=order, user=None, email_type=events.OrderEventsEmails.PAYMENT
         )
-        send_payment_confirmation.delay(order.pk)
+        if settings.EMAIL_SEND_PAYMENT_CONF_EMAIL:
+            send_payment_confirmation.delay(order.pk)
 
         if utils.order_needs_automatic_fullfilment(order):
             automatically_fulfill_digital_lines(order)
