@@ -284,7 +284,7 @@ def funnel_index(request, slug, pk, aslug):
     if external_url is not None:
         logger.info(f"funnel_index: redirecting to {external_url}")
         if settings.ENABLE_FUNNEL_REDIRECT:
-            return redirect(external_url)
+            return redirect(str(external_url))
     today = datetime.date.today()
     is_visible = product.publication_date is None or product.publication_date <= today
     checkout = get_checkout_from_request(request)
