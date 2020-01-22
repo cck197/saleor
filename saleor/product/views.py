@@ -280,7 +280,7 @@ def funnel_index(request, slug, pk, aslug):
         raise Http404("Collection doesn't exist")
     request.session["funnel_index"] = funnel_index
     request.session["funnel_slug"] = collection.slug
-    external_url = product.get_first_attr_value("external_url")
+    external_url = product.get_attr("external_url")
     if external_url is not None:
         logger.info(f"funnel_index: redirecting to {external_url}")
         if settings.ENABLE_FUNNEL_REDIRECT:

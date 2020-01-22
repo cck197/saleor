@@ -355,21 +355,27 @@ class Product(SeoModel, ModelWithMetadata, PublishableModel):
         price = calculate_discounted_price(self, self.price, discounts)
         return MoneyRange(start=price, stop=price)
 
-    def get_first_attr_value(self, slug):
-        vals = [
-            a.values.first().name
-            for a in self.attributes.all()
-            if a.attribute.slug == slug
-        ]
-        if vals:
-            return vals[0]
-
     def get_attr_startswith(self, slug_prefix):
-        for attribute_rel in self.attributes.all():
-            attribute = attribute_rel.attribute
-            if attribute.slug.startswith(slug_prefix):
-                for value in attribute_rel.values.all():
-                    yield value.translated
+        for attribute in self.attributes.filter(
+            assignment__attribute__slug__startswith=slug_prefix
+        ):
+            for value in attribute.values.all():
+                yield value.translated
+
+    def get_attr(self, slug):
+        try:
+            return (
+                self.attributes.get(assignment__attribute__slug=slug)
+                .values.first()
+                .translated
+            )
+        except AssignedProductAttribute.DoesNotExist:
+            pass
+
+    def get_attrs(self, slug):
+        for attribute in self.attributes.filter(assignment__attribute__slug=slug):
+            for value in attribute.values.all():
+                yield value.translated
 
 
 class ProductTranslation(SeoModelTranslation):
