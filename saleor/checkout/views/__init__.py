@@ -343,11 +343,10 @@ def checkout_index_new(request, checkout):
     # ctx.update({"shipping_method": response.context_data})
 
     # skip the shipping method form and choose the cheapest
-    if checkout.shipping_method is None:
-        checkout.shipping_method = get_valid_shipping_methods_for_checkout(
-            checkout, discounts, country_code=country_code
-        ).first()
-        checkout.save()
+    checkout.shipping_method = get_valid_shipping_methods_for_checkout(
+        checkout, discounts, country_code=country_code
+    ).first()
+    checkout.save()
 
     order_data = prepare_order_data(
         checkout=checkout,
