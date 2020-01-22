@@ -317,7 +317,6 @@ def checkout_index_new(request, checkout):
     shipping_price_range = get_shipping_price_estimate(
         checkout, discounts, country_code=country_code
     )
-    breakpoint()
 
     ctx.update(
         get_checkout_context(

@@ -1155,7 +1155,6 @@ def prepare_order_data(*, checkout: Checkout, tracking_code: str, discounts) -> 
 
 def update_shipping_method(checkout: Checkout, order: Order):
     '''Update the shipping method from checkout and recalculate total'''
-    breakpoint()
     if checkout.shipping_method != order.shipping_method:
         sm_old = order.shipping_method
         sm_new = checkout.shipping_method
