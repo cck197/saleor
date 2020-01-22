@@ -17,12 +17,14 @@ from ..utils import (
     create_order,
     check_product_availability_and_warn,
     get_checkout_context,
+    get_country_code,
     get_or_empty_db_checkout,
     get_shipping_price_estimate,
     get_valid_shipping_methods_for_checkout,
     is_valid_shipping_method,
     prepare_order_data,
     update_checkout_quantity,
+    update_shipping_method,
     upsell_order,
     should_redirect,
 )
@@ -307,7 +309,7 @@ def checkout_index_new(request, checkout):
     request.redirect = False
     response = anonymous_user_shipping_address_view(request, checkout, get_ctx=False)
     ctx.update({"shipping": response.context_data, "cheesy_clock": True})
-    country_code = ctx["shipping"]["address_form"].initial["country"]
+    country_code = get_country_code(ctx["shipping"]["address_form"])
     country_form = CountryForm(initial={"country": country_code})
     errors = country_form.errors
     if errors:
@@ -315,6 +317,7 @@ def checkout_index_new(request, checkout):
     shipping_price_range = get_shipping_price_estimate(
         checkout, discounts, country_code=country_code
     )
+    breakpoint()
 
     ctx.update(
         get_checkout_context(
@@ -364,9 +367,7 @@ def checkout_index_new(request, checkout):
     order.shipping_address = checkout.shipping_address
     if checkout.email:
         order.user_email = checkout.email
-    if checkout.shipping_method:
-        order.shipping_method = checkout.shipping_method
-        order.shipping_method_name = checkout.shipping_method.name
+    update_shipping_method(checkout, order)
     update_order_prices(order, discounts)
     order.save()
 

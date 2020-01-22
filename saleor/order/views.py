@@ -142,7 +142,10 @@ def start_payment(request, order, gateway):
                     customer_id=customer_id,
                 )
                 if customer_id is None:
-                    store_customer_id(request.user, payment.gateway, tx.customer_id)
+                    try:
+                        store_customer_id(request.user, payment.gateway, tx.customer_id)
+                    except AttributeError:
+                        pass
             except Exception as exc:
                 form.add_error(None, str(exc))
             else:

@@ -1153,6 +1153,25 @@ def prepare_order_data(*, checkout: Checkout, tracking_code: str, discounts) -> 
     return order_data
 
 
+def update_shipping_method(checkout: Checkout, order: Order):
+    '''Update the shipping method from checkout and recalculate total'''
+    breakpoint()
+    if checkout.shipping_method != order.shipping_method:
+        sm_old = order.shipping_method
+        sm_new = checkout.shipping_method
+        order.shipping_method = sm_new
+        order.shipping_method_name =  sm_new.name
+        order.shipping_price_net_amount = sm_new.price_amount
+        order.shipping_price_gross_amount = sm_new.price_amount
+        return True
+    return False
+
+
+def get_country_code(address_form):
+    d = getattr(address_form, 'cleaned_data', address_form.initial)
+    return d['country']
+
+
 def abort_order_data(order_data: dict):
     if "voucher" in order_data:
         voucher = order_data["voucher"]
