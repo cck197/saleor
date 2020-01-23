@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, List, Optional
 
 import braintree as braintree_sdk
@@ -25,6 +26,8 @@ ERROR_CODES_WHITELIST = {
         Please try again later. Settlement time might vary depending
         on the issuers bank."""
 }
+
+logger = logging.getLogger(__name__)
 
 
 def get_billing_data(payment_information: PaymentData) -> Dict:
@@ -142,7 +145,9 @@ def authorize(
     except braintree_sdk.exceptions.NotFoundError:
         raise BraintreeException(DEFAULT_ERROR_MESSAGE)
 
+    logger.info(f"authorize request: {payment_information}")
     gateway_response = extract_gateway_response(result)
+    logger.info(f"authorize response: {gateway_response}")
     error = get_error_for_client(gateway_response["errors"])
     kind = TransactionKind.CAPTURE if config.auto_capture else TransactionKind.AUTH
     return GatewayResponse(
