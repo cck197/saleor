@@ -14,6 +14,7 @@ from ...product.models import Collection
 from ...order.emails import send_order_confirmation
 from ..utils import (
     clear_funnel_session,
+    clear_payments,
     create_order,
     check_product_availability_and_warn,
     get_checkout_context,
@@ -228,6 +229,7 @@ def blank(request, checkout):
         )
     return TemplateResponse(request, "checkout/blank.html")
 
+
 @get_or_empty_db_checkout(checkout_queryset=Checkout.objects.for_display())
 def checkout_index_new(request, checkout):
     """Display checkout details."""
@@ -336,7 +338,7 @@ def checkout_index_new(request, checkout):
     )
     response = anonymous_user_shipping_address_view(request, checkout)
     ctx.update({"shipping": response.context_data})
-    for key in ("user_form", "address_form",):
+    for key in ("user_form", "address_form"):
         errors = ctx["shipping"][key].errors
         if errors:
             logger.info(f"checkout: {key}.form.errors: {dict(errors)}")
@@ -366,11 +368,13 @@ def checkout_index_new(request, checkout):
     order.shipping_address = checkout.shipping_address
     if checkout.email:
         order.user_email = checkout.email
-    update_shipping_method(checkout, order)
+    if update_shipping_method(checkout, order):
+        clear_payments(order)
     update_order_prices(order, discounts)
     order.save()
 
-    if request.method == "POST":
+    # don't start payment processing until the JS submits the form
+    if request.POST.get("payment_method_nonce"):
         gateway = request.POST["gateway"]
         if not order.is_fully_paid():
             response = start_payment(request, token=order.token, gateway=gateway)

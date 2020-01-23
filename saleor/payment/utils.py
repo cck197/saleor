@@ -238,12 +238,13 @@ def fetch_customer_id(user, gateway):
 
 def store_customer_id(user, gateway, customer_id):
     """Store customer_id in users private meta for desired gateway."""
-    user.store_private_meta(
-        namespace=GATEWAYS_META_NAMESPACE,
-        client=prepare_namespace_name(gateway),
-        item={"customer_id": customer_id},
-    )
-    user.save(update_fields=["private_meta"])
+    if hasattr(user, "store_private_meta"):
+        user.store_private_meta(
+            namespace=GATEWAYS_META_NAMESPACE,
+            client=prepare_namespace_name(gateway),
+            item={"customer_id": customer_id},
+        )
+        user.save(update_fields=["private_meta"])
 
 
 def prepare_namespace_name(s):

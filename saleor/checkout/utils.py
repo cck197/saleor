@@ -1153,6 +1153,12 @@ def prepare_order_data(*, checkout: Checkout, tracking_code: str, discounts) -> 
     return order_data
 
 
+def clear_payments(order: Order):
+    for p in order.payments.all():
+        [t.delete() for t in p.transactions.all()]
+        p.delete()
+
+
 def update_shipping_method(checkout: Checkout, order: Order):
     '''Update the shipping method from checkout and recalculate total'''
     if checkout.shipping_method != order.shipping_method:
