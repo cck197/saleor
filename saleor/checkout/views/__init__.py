@@ -253,26 +253,27 @@ def checkout_index_new(request, checkout):
         upsell_order(order, checkout, analytics.get_client_id(request), discounts)
         payment = order.payments.first()
         order_id = "{}_{}".format(order.id, funnel_index)
-        payment_ = create_payment(
-            gateway=payment.gateway,
-            currency=order.total.gross.currency,
-            email=order.user_email,
-            billing_address=order.billing_address,
-            customer_ip_address=payment.customer_ip_address,
-            total=abs(order.total_balance.amount),
-            order=order,
-            extra_data={"order_id": order_id},
-        )
-        tx = payment.transactions.first()
-        token = tx.gateway_response.get("payment_method", "")
-        customer_id = tx.customer_id
-        process_payment(
-            payment_,
-            token,
-            store_source=True,
-            customer_id=customer_id,
-            order_id=order_id,
-        )
+        if order.total_balance.amount:
+            payment_ = create_payment(
+                gateway=payment.gateway,
+                currency=order.total.gross.currency,
+                email=order.user_email,
+                billing_address=order.billing_address,
+                customer_ip_address=payment.customer_ip_address,
+                total=abs(order.total_balance.amount),
+                order=order,
+                extra_data={"order_id": order_id},
+            )
+            tx = payment.transactions.first()
+            token = tx.gateway_response.get("payment_method", "")
+            customer_id = tx.customer_id
+            process_payment(
+                payment_,
+                token,
+                store_source=True,
+                customer_id=customer_id,
+                order_id=order_id,
+            )
         funnel_index = funnel_index + 1
         request.session["funnel_index"] = funnel_index
         funnel = get_object_or_404(Collection, slug=request.session["funnel_slug"])
